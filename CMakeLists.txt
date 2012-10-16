@@ -16,7 +16,7 @@ find_package(Boost COMPONENTS system filesystem thread REQUIRED)
 SET( FRI_REMOTE fri_remote fri_remote_rt)
 
 INCLUDE_DIRECTORIES(include /usr/local/rtnet/include $ENV{LAB_ROOT}/include ${FRI_REMOTE})
-LINK_DIRECTORIES(${PROJECT_NAME_BIN}/lib ${Boost_LIBRARY_DIR} $ENV{LAB_ROOT}/lib/x86_64xeno/)
+#LINK_DIRECTORIES(${PROJECT_NAME_BIN}/lib ${Boost_LIBRARY_DIR} $ENV{LAB_ROOT}/lib/x86_64xeno/)
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
@@ -26,10 +26,10 @@ ADD_LIBRARY(${PROJECT_NAME}
   fri_remote/friudp.cpp  
 )
 
-ADD_LIBRARY(${PROJECT_NAME}_RT
-  fri_remote_rt/friremote_rt.cpp  
-  fri_remote_rt/friudp_rt.cpp  
-)
+#ADD_LIBRARY(${PROJECT_NAME}_RT
+#  fri_remote_rt/friremote_rt.cpp  
+#  fri_remote_rt/friudp_rt.cpp  
+#)
 
 ADD_EXECUTABLE(friFirstApp
   fri_firstapp/frifirstapp.cpp)
@@ -47,32 +47,32 @@ target_link_libraries(friSecondApp
 )
 
 
-ADD_EXECUTABLE(friTestRT
-  fri_test_rt/fritest_rt.cpp)
-target_link_libraries(friTestRT
-  ${PROJECT_NAME}_RT
-  ${XENO_NATIVE_LDFLAGS} -lrtdm
-  ${Boost_LIBRARIES}
-  #-lutility
-  )
+#ADD_EXECUTABLE(friTestRT
+#  fri_test_rt/fritest_rt.cpp)
+#target_link_libraries(friTestRT
+#  ${PROJECT_NAME}_RT
+#  ${XENO_NATIVE_LDFLAGS} -lrtdm
+#  ${Boost_LIBRARIES}
+#  #-lutility
+#  )
 
-ADD_EXECUTABLE(friFirstAppRT
-  fri_firstapp_rt/frifirstapp_rt.cpp)
-target_link_libraries(friFirstAppRT
-  ${PROJECT_NAME}_RT
-  ${XENO_NATIVE_LDFLAGS} -lrtdm
-  ${Boost_LIBRARIES}
-  #-lutility
-  )
+#ADD_EXECUTABLE(friFirstAppRT
+#  fri_firstapp_rt/frifirstapp_rt.cpp)
+#target_link_libraries(friFirstAppRT
+#  ${PROJECT_NAME}_RT
+#  ${XENO_NATIVE_LDFLAGS} -lrtdm
+#  ${Boost_LIBRARIES}
+#  #-lutility
+#  )
 
-ADD_EXECUTABLE(friSecondAppRT
-  fri_secondapp_rt/frisecondapp_rt.cpp)
-target_link_libraries(friSecondAppRT
-  ${PROJECT_NAME}_RT
-  ${XENO_NATIVE_LDFLAGS} -lrtdm
-  ${Boost_LIBRARIES}
-  #-lutility
-  )
+#ADD_EXECUTABLE(friSecondAppRT
+#  fri_secondapp_rt/frisecondapp_rt.cpp)
+#target_link_libraries(friSecondAppRT
+#  ${PROJECT_NAME}_RT
+#  ${XENO_NATIVE_LDFLAGS} -lrtdm
+#  ${Boost_LIBRARIES}
+#  #-lutility
+#  )
 
 # add a target to generate API documentation with Doxygen
 # find_package(Doxygen)
