@@ -98,7 +98,7 @@ void friUdp::Init(const char * remoteHost)
   memset(&krcAddr, 0, sizeof(krcAddr));
 
   /* socket creation */
-  printf("creating socket\n");
+  //  printf("creating socket\n");
   int udp_socket_ = rt_dev_socket(AF_INET, SOCK_DGRAM, 0);
   // udpSock = socket(PF_INET, SOCK_DGRAM, 0);
   if ( udp_socket_< 0)

@@ -74,6 +74,15 @@ target_link_libraries(friSecondAppRT
   #-lutility
   )
 
+ADD_EXECUTABLE(friGravCompRT
+  fri_secondapp_rt/fri_gravitycomp_rt.cpp)
+target_link_libraries(friGravCompRT
+  ${PROJECT_NAME}_RT
+  ${XENO_NATIVE_LDFLAGS} -lrtdm
+  ${Boost_LIBRARIES}
+  #-lutility
+  )
+
 # add a target to generate API documentation with Doxygen
 # find_package(Doxygen)
 # if(DOXYGEN_FOUND)

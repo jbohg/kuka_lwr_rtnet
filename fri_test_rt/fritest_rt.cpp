@@ -66,6 +66,8 @@
 using namespace std;
 
 bool going = true;
+int mainLoopCounter = 0;
+
 // int frequency = 500; //in Hz
 // double T_s = 1.0/double(500);
 
@@ -79,6 +81,8 @@ typedef struct{
   int quality;
   int mode;
   char message[1024];
+  int seqCount;
+  int reflSeqCount;
 } loop_monitoring;
 
 void waitForEnter()
@@ -117,6 +121,8 @@ void logTask()
 
   while ( reading || going )
     {
+
+      //      std::cout << "in log loop" << std::endl;
       if(reading)
 	{
 	  if(log.message[0]!=0){
@@ -125,8 +131,8 @@ void logTask()
 	    // for (int i = 0; i < LBR_MNJ; i++)
 	    //   fprintf(log_file, "%f ", log.cur_jnt_vals[i]);
 	    
-	    fprintf(log_file, "Quality %d ", log.quality);
-	    //fprintf(log_file, "%d ", log.mode);
+	    fprintf(log_file, "Quality %d\n", log.quality);
+	    fprintf(log_file, "Mode %d ", log.mode);
 	    // fprintf(log_file, "\n");
 	    fprintf(log_file, "%s \n\n", log.message);
 	  }
@@ -151,7 +157,7 @@ void mainControlLoop(void* cookie)
 
   //memory allocation
   loop_monitoring log;
-
+  
   long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
   //rt_task_wait_period(NULL);
   
@@ -162,64 +168,53 @@ void mainControlLoop(void* cookie)
   /* enter main loop - wait until we enter stable command mode */
   while(going)
     {
-      
+      mainLoopCounter++;
+      //      std::cout << "entering main loop " << std::endl;
+
       //friInst.doReceiveData();
        if(friInst.doReceiveData()==0) {
 
+	 //  std::cout << "entering main loop " << std::endl;
+
 	 // have some debug information every n.th. step
-	 int divider = (int)( (1./friInst.getSampleTime()) *2.0);
+	 int divider = (int)( (1./friInst.getSampleTime()) *0.5);
+	 std::stringstream buffer;
 	 if ( friInst.getSequenceCount() % divider == 0)
 	   {
-	     std::stringstream buffer;
 	     buffer << "krl interaction \n" << friInst.getMsrBuf().krl 
 		    << "intf stat interaction \n" << friInst.getMsrBuf().intf.stat 
-		    << "smpl " << friInst.getSampleTime() << endl;
-	    
-	     sprintf(log.message, "%s\n", buffer.str().c_str());
-	     //	     log.message = buffer.str();
-	     /*
-	       cout << "krl interaction \n";
-	       cout << friInst.getMsrBuf().krl;
-	       cout << "intf stat interaction \n";
-	       cout << friInst.getMsrBuf().intf.stat;
-	       cout << "smpl " << friInst.getSampleTime();
-	      
-	       cout << endl;
-	     */
+		    << "smpl " << friInst.getSampleTime() << std::endl
+		    << "sequence count " << friInst.getSequenceCount() << std::endl
+		    << "refl sequence count " << friInst.getReflSequenceCount() << std::endl;
+	     
 	   } 
 	 else 
 	   {
-	     log.message[0] = 0;
+	     buffer << "";
 	   }
-	
-	 //	 if ( friInst.getQuality() != lastQuality)
-	 //	   {
-	 //	     log.message += "QQQQuality change detected\n";
-      // 	    //	  cout << "quality change detected "<< friInst.getQuality()<< " \n";
-      // 	    //	  cout << friInst.getMsrBuf().intf;
-      // 	    //	  cout << endl;
-      // 	    //	  lastQuality=friInst.getQuality();
-	 //	   } 
-
-      // 	log.num_received_messages++;
-      // 	for (int i = 0; i < LBR_MNJ; i++)
-      // 	  {
-      // 	    log.cur_jnt_vals[i] = friInst.getMsrCmdJntPosition()[i];
-      // 	  }
-	
+	 
+	 
+	 if ( friInst.getQuality() != lastQuality)
+	   {
+	     buffer<< "QQQQuality change detected at" 
+		   << "sequence count " << friInst.getSequenceCount() << std::endl
+		   << "refl sequence count " << friInst.getReflSequenceCount() << std::endl;;
+	   } 
+	 
+	 sprintf(log.message, "%s\n", buffer.str().c_str());
+	 
+	 
 	 if(lastQuality >= FRI_QUALITY_OK)
 	   log.quality = 1;
 	 else 
 	   log.quality = 0;
-	
-      // 	if( friInst.getState() == FRI_STATE_CMD)
-      // 	  log.mode = 1;
-      // 	else 
-      // 	  log.mode = 0;
-
-      // } else {
-
-      // 	log.quality = 200;
+	   
+	 
+	 if( friInst.getState() == FRI_STATE_CMD)
+	   log.mode = 1;
+	 else 
+	   log.mode = 0;
+	 
        }
 
        rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
@@ -236,25 +231,29 @@ void mainControlLoop(void* cookie)
 	{
 	  // send a second marker
 	  friInst.setToKRLInt(0,10);
-	}//   else 
-	// {
-	    
-	//   std::cout << "Quality not ok!" << std::endl;
-	// }
-	
+	}  /* else 
+	{
+	  
+	   std::cout << "Quality not ok!" << std::endl;
+	   }
+	   */
       //
       // just mirror the real value..
       //
       friInst.setToKRLReal(0,friInst.getFrmKRLReal(1));
 	
+
       // Mirror old joint values 
       friInst.doTest();
+      
+      if(mainLoopCounter>=3000 && mainLoopCounter<=3200)
+	continue;
       
       // Send packages 
       friInst.doSendData();
 
       //rt_task_wait_period(NULL);
-       }
+    }
 
   return;
 }

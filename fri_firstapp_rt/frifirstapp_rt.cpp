@@ -154,9 +154,9 @@ void mainControlLoop(void* cookie)
   rt_task_set_mode(0, T_WARNSW, NULL);
   
   //memory allocation
-  //  loop_monitoring log;
+  loop_monitoring log;
   
-  //long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
+  long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
   //rt_task_wait_period(NULL);
   
   string ip("192.168.0.20");
@@ -228,35 +228,24 @@ void mainControlLoop(void* cookie)
       friInst.doSendData();
 
       
-      // //      std::cout << "Dong some statistics gathering " << std::endl;
-      // // have some debug information every n.th. step
-      // int divider = (int)( (1./friInst.getSampleTime()) *2.0);
-      // if ( friInst.getSequenceCount() % divider == 0)
-      // 	{
-      // 	  std::stringstream buffer;
-      // 	  buffer << "krl interaction \n" << friInst.getMsrBuf().krl 
-      // 		 << "intf stat interaction \n" << friInst.getMsrBuf().intf.stat 
-      // 		 << "smpl " << friInst.getSampleTime() << endl;
+      //      std::cout << "Dong some statistics gathering " << std::endl;
+      // have some debug information every n.th. step
+      int divider = (int)( (1./friInst.getSampleTime()));
+      if ( friInst.getSequenceCount() % divider == 0)
+       	{
+       	  std::stringstream buffer;
+       	  buffer << "krl interaction \n" << friInst.getMsrBuf().krl 
+       		 << "intf stat interaction \n" << friInst.getMsrBuf().intf.stat 
+       		 << "smpl " << friInst.getSampleTime() << endl;
 	  
-      // 	  log.message = buffer.str();
+       	  log.message = buffer.str();
 	  
-      // 	  /*
-      // 	  cout << "krl interaction \n";
-      // 	  cout << friInst.getMsrBuf().krl;
-      // 	  cout << "intf stat interaction \n";
-      // 	  cout << friInst.getMsrBuf().intf.stat;
-      // 	  cout << "smpl " << friInst.getSampleTime();
-	  
-      // 	  cout << endl;
-      // 	  */
       
-      // 	} else {
-      // 	log.message = "";
-      // }
+       	} else {
+       	log.message = "";
+      }
       
-      // //      std::cout << "Checking if stop request issued " << std::endl;
-      
-      
+            
       // Stop request is issued from the other side
       if ( friInst.getFrmKRLInt(0) == -1) 
 	{
@@ -270,38 +259,33 @@ void mainControlLoop(void* cookie)
       // Quality change leads to output of statistics
       // for informational reasons
       //
-      // if ( friInst.getQuality() != lastQuality)
-      // 	{
-      // 	  log.message += "quality change detected\n";
-      // 	  //	  cout << "quality change detected "<< friInst.getQuality()<< " \n";
-      // 	  //	  cout << friInst.getMsrBuf().intf;
-      // 	  //	  cout << endl;
-      // 	  //	  lastQuality=friInst.getQuality();
-      // 	} 
+      if ( friInst.getQuality() != lastQuality)
+       	{
+       	  log.message += "quality change detected\n";
+	} 
 
-      //      std::cout << "logging the data " << std::endl;
      
-      // // log content of message 
-      // log.num_received_messages++;
-      // for (int i = 0; i < LBR_MNJ; i++)
-      // 	{
-      // 	  log.cur_jnt_vals[i] = newJntVals[i];
-      // 	}
+      // log content of message 
+      log.num_received_messages++;
+      for (int i = 0; i < LBR_MNJ; i++)
+       	{
+      	  log.cur_jnt_vals[i] = newJntVals[i];
+       	}
       
-      // if(lastQuality >= FRI_QUALITY_OK)
-      // 	log.quality = 1;
-      // else 
-      // 	log.quality = 0;
+      if(lastQuality >= FRI_QUALITY_OK)
+       	log.quality = 1;
+      else 
+       	log.quality = 0;
       
-      // if( friInst.getState() == FRI_STATE_CMD)
-      // 	log.mode = 1;
-      // else 
-      // 	log.mode = 0;
+      if( friInst.getState() == FRI_STATE_CMD)
+       	log.mode = 1;
+      else 
+       	log.mode = 0;
 
       //      std::cout << "Writing things to the logpipe " << std::endl;
 
-      // rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
-      // log.time = long(rt_timer_ticks2ns(rt_timer_read())) - t_1;
+      rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
+      log.time = long(rt_timer_ticks2ns(rt_timer_read())) - t_1;
       
     }
   
@@ -324,7 +308,7 @@ main
 {
 
   // std::string ans;
-  //int tmp = 0;
+  int tmp = 0;
 
   // //the argument sets the frequency
   // printf("please enter frequency of operation [%d]: ", frequency);
@@ -362,13 +346,13 @@ main
       }
   }
 
-  // if((tmp = rt_pipe_create(&log_pipe, "log_pipe", P_MINOR_AUTO, 0)))
-  //   {
-  //     std::cout << "cannot create print pipe, error " << tmp << std::endl;
-  //     return 1;
-  //   }
+  if((tmp = rt_pipe_create(&log_pipe, "log_pipe", P_MINOR_AUTO, 0)))
+    {
+      std::cout << "cannot create print pipe, error " << tmp << std::endl;
+      return 1;
+    }
 
-  // boost::thread log_thread(logTask);
+  boost::thread log_thread(logTask);
   
   rt_task_create(&task, "Real time loop", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&task, &mainControlLoop, NULL);
@@ -381,9 +365,9 @@ main
   going = false;
   rt_task_join(&task);
   
-  // rt_pipe_delete(&log_pipe);
+  rt_pipe_delete(&log_pipe);
   
-  // log_thread.join();
+  log_thread.join();
 
   return EXIT_SUCCESS;
 }

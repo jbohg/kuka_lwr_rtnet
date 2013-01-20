@@ -90,8 +90,11 @@ public:
 	value is ignored -> the respective  cmd.cmd.cmdFlags field is set properly
 	Note: It is possible to change cmd.cmd.cmdFlags in monitor mode only !!
 	*/
-	int doJntImpedanceControl(const float newJntPosition[LBR_MNJ], const float newJntStiff[LBR_MNJ] = NULL, const float newJntDamp[LBR_MNJ]=NULL, const float newJntAddTorque[LBR_MNJ]=NULL,bool flagDataExchange=true);
-
+	int doJntImpedanceControl(const float newJntPosition[LBR_MNJ], 
+				  const float newJntStiff[LBR_MNJ] = NULL, 
+				  const float newJntDamp[LBR_MNJ]=NULL, 
+				  const float newJntAddTorque[LBR_MNJ]=NULL,bool flagDataExchange=true);
+	
 
 	/** automatically do data exchange, if not otherwise specified 
 	if flagDataExchange is set to false, call doDataExchange() 

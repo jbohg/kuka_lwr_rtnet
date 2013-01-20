@@ -157,6 +157,7 @@ class friRemote
 
   float getSampleTime() { return msr.intf.desiredCmdSampleTime; }
   int getSequenceCount() { return seqCount; }
+  int getReflSequenceCount() { return msr.head.sendSeqCount; }
 
   /* @{ */
   /** KRL Interaction -- Corresponds to $FRI_TO_REA */
