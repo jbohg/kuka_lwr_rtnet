@@ -81,6 +81,7 @@ typedef struct{
   long time;
   int num_received_messages;
   float cur_jnt_vals[LBR_MNJ];
+  float cur_trq_vals[LBR_MNJ];
   int quality;
   int mode;
   int control_mode;
@@ -131,7 +132,9 @@ void logTask()
 	  fprintf(log_file, "%d ", log.num_received_messages);
 	  for (int i = 0; i < LBR_MNJ; i++)
 	    fprintf(log_file, "%f ", log.cur_jnt_vals[i]);
-	  
+	  fprintf(log_file, "\n Torques: ");
+	  for (int i = 0; i < LBR_MNJ; i++)
+	    fprintf(log_file, "%f ", log.cur_trq_vals[i]);
 	  fprintf(log_file, "%d ", log.quality);
 	  fprintf(log_file, "%d ", log.control_mode);
 	  fprintf(log_file, "%d ", log.mode);
@@ -248,10 +251,11 @@ void mainControlLoop(void* cookie)
 		    for (int i = 0; i < LBR_MNJ; i++)
 		      {
 			// just do gravity comp
-			newJntVals[i] = friInst.getMsrMsrJntPosition()[i];//firstJntVals[i];
-			newJntStiff[i] = 0.0;
-			newJntDamp[i] = 0.0;
+			newJntVals[i] =	firstJntVals[i];
+			newJntStiff[i] = 100.0;
+			newJntDamp[i] = 0.5;
 			newJntAddTorque[i] = 0.0;
+			//=(float)sin( timeCounter * M_PI * 0.03) * (1.);
 		      }
 		  }
 		else
@@ -268,7 +272,12 @@ void mainControlLoop(void* cookie)
 	      {
 		log.cur_jnt_vals[i] = newJntVals[i];
 	      }
-	    
+	    /*
+	    for (int i = 0; i < LBR_MNJ; i++)
+	      {
+		log.cur_trq_vals[i] = newJntAddTorque[i];
+	      }
+	    */
 	    // Call to data exchange - and the like 
 	    friInst.doJntImpedanceControl(newJntVals, 
 					  newJntStiff, 
