@@ -159,7 +159,7 @@ void mainControlLoop(void* cookie)
   long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
   //rt_task_wait_period(NULL);
   
-  string ip("192.168.0.20");
+  string ip("192.168.1.20");
   friRemote friInst(49938, ip.c_str());
   //  friRemote friInst;
   FRI_QUALITY lastQuality = FRI_QUALITY_BAD;

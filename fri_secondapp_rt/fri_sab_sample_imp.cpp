@@ -74,7 +74,7 @@ bool going = true;
 int frequency = 500; //in Hz
 double T_s = 1.0/double(500);
 
-RT_PIPE log_pipe;
+//RT_PIPE log_pipe;
 RT_TASK task;
 
 typedef struct{
@@ -132,10 +132,9 @@ void logTask()
 	  fprintf(log_file, "%d ", log.num_received_messages);
 	  for (int i = 0; i < LBR_MNJ; i++)
 	    fprintf(log_file, "%f ", log.cur_jnt_vals[i]);
-	  /*	  fprintf(log_file, "\n Torques: ");
+	  fprintf(log_file, "\n Torques: ");
 	  for (int i = 0; i < LBR_MNJ; i++)
 	    fprintf(log_file, "%f ", log.cur_trq_vals[i]);
-	  */
 	  fprintf(log_file, "%d ", log.quality);
 	  fprintf(log_file, "%d ", log.control_mode);
 	  fprintf(log_file, "%d ", log.mode);
@@ -161,8 +160,10 @@ void mainControlLoop(void* cookie)
   rt_task_set_mode(0, T_WARNSW, NULL);
 
   //memory allocation
+  /*
   loop_monitoring log;
   long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
+  */
 
   friRemote friInst(49938, "192.168.0.20");
   //  friRemote friInst;
@@ -194,7 +195,7 @@ void mainControlLoop(void* cookie)
       //
       friInst.setToKRLReal(0,friInst.getFrmKRLReal(1));
 
-
+      /*
       int divider = (int)( (1./friInst.getSampleTime()));
       if ( friInst.getSequenceCount() % divider == 0)
        	{
@@ -209,13 +210,14 @@ void mainControlLoop(void* cookie)
        	} else {
        	log.message = "";
       }
+      */
 
       if ( lastCtrlScheme != friInst.getCurrentControlScheme())
 	{
 	  //cout << "switching control scheme " << lastCtrlScheme;
 	  lastCtrlScheme = friInst.getCurrentControlScheme();
-	  log.message += "control scheme changed \n";
-	  log.control_mode = lastCtrlScheme;
+	  // log.message += "control scheme changed \n";
+	  // log.control_mode = lastCtrlScheme;
 	  //	  cout << " to " << lastCtrlScheme;
 	}
       
@@ -251,15 +253,13 @@ void mainControlLoop(void* cookie)
 		    timeCounter+=friInst.getSampleTime();
 		    for (int i = 0; i < LBR_MNJ; i++)
 		      {
-			// just do gravity comp
+			// just do spring movement from first joint position
 			newJntVals[i] =	firstJntVals[i];
 			newJntStiff[i] = 100.0;
 			newJntDamp[i] = 0.5;
 			newJntAddTorque[i] = 0.0;
 			//=(float)sin( timeCounter * M_PI * 0.03) * (1.);
-			log.cur_jnt_vals[i] = newJntVals[i];
 		      }
-
 		  }
 		else
 		  {
@@ -271,10 +271,15 @@ void mainControlLoop(void* cookie)
 		timeCounter=0.;
 	      }
 
-	    /*
+	    /*	    
 	    for (int i = 0; i < LBR_MNJ; i++)
 	      {
 		log.cur_jnt_vals[i] = newJntVals[i];
+	      }
+	    
+	    for (int i = 0; i < LBR_MNJ; i++)
+	      {
+		log.cur_trq_vals[i] = newJntAddTorque[i];
 	      }
 	    */
 	    // Call to data exchange - and the like 
@@ -301,18 +306,18 @@ void mainControlLoop(void* cookie)
 	  break;	  
 	}
 
-
+      /*
       if ( friInst.getQuality() != lastQuality)
        	{
        	  log.message += "quality change detected\n";
 	} 
-      
+      */
       
       // log content of message 
-      log.num_received_messages++;
+      //      log.num_received_messages++;
       
 
-
+      /*
       if(lastQuality >= FRI_QUALITY_OK)
        	log.quality = 1;
       else 
@@ -325,6 +330,7 @@ void mainControlLoop(void* cookie)
 
       rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
       log.time = long(rt_timer_ticks2ns(rt_timer_read())) - t_1;
+      */
     }
 }
 
@@ -344,7 +350,7 @@ main
 (int argc, char *argv[])
 {
 
-  int tmp = 0;
+  //  int tmp = 0;
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   rt_task_shadow(NULL, "fri_second_rt", 50, 0);
@@ -369,6 +375,7 @@ main
       }
   }
   
+  /*
   if((tmp = rt_pipe_create(&log_pipe, "log_pipe", P_MINOR_AUTO, 0)))
     {
       std::cout << "cannot create print pipe, error " << tmp << std::endl;
@@ -376,6 +383,7 @@ main
     }
 
   boost::thread log_thread(logTask);
+  */
 
   rt_task_create(&task, "Real time loop", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&task, &mainControlLoop, NULL);
@@ -388,9 +396,9 @@ main
   going = false;
   rt_task_join(&task);
 
-  rt_pipe_delete(&log_pipe);
+  // rt_pipe_delete(&log_pipe);
   
-  log_thread.join();
+  //  log_thread.join();
 
   return EXIT_SUCCESS;
 }  

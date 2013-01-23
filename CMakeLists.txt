@@ -92,6 +92,15 @@ target_link_libraries(friSineTorqueRT
   #-lutility
   )
 
+ADD_EXECUTABLE(friSABImpedance
+  fri_secondapp_rt/fri_sab_sample_imp.cpp)
+target_link_libraries(friSABImpedance
+  ${PROJECT_NAME}_RT
+  ${XENO_NATIVE_LDFLAGS} -lrtdm
+  ${Boost_LIBRARIES}
+  #-lutility
+  )
+
 # add a target to generate API documentation with Doxygen
 # find_package(Doxygen)
 # if(DOXYGEN_FOUND)
