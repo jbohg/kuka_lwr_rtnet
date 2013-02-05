@@ -73,6 +73,7 @@ friUdp::friUdp(int port, const char * remoteHost) : serverPort(port)
 #endif
 
   Init(remoteHost);
+  
 }
 
 
@@ -98,9 +99,7 @@ void friUdp::Init(const char * remoteHost)
   memset(&krcAddr, 0, sizeof(krcAddr));
 
   /* socket creation */
-  //  printf("creating socket\n");
   int udp_socket_ = rt_dev_socket(AF_INET, SOCK_DGRAM, 0);
-  // udpSock = socket(PF_INET, SOCK_DGRAM, 0);
   if ( udp_socket_< 0)
     {
       printf("cannot create listener sock, error: %d, %s", errno, strerror(errno));
@@ -108,7 +107,6 @@ void friUdp::Init(const char * remoteHost)
     }
 
   //make the socket non blocking
-  //  int64_t tout = -1;
   int64_t tout = 5 * 20000000000;
   if(rt_dev_ioctl(udp_socket_, RTNET_RTIOC_TIMEOUT, &tout) < 0)
     {
@@ -116,22 +114,27 @@ void friUdp::Init(const char * remoteHost)
       exit(-1);
     }
   
-// #ifdef HAVE_TIME_STAMP_RECEIVE
-//   {
-//     printf("HAVE_TIME_STAMP_RECEIVE\n");
-//     int temp = 1;
-//     if (setsockopt(udpSock, SOL_SOCKET, SO_TIMESTAMP, &temp, sizeof(int)) < 0)
-//       {
-// 	printf("failed to enable receive time stamps\n");
-// 	exit(1);
-//       }
-//   }
-// #endif
-
   /* bind local server port */
   servAddr.sin_family = AF_INET;
   servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
   servAddr.sin_port = htons(serverPort);
+
+    // create local adress based on remote host subnet
+  if ( remoteHost ) {
+    unsigned long net, server; 
+    struct sockaddr_in adr_server;
+    struct sockaddr_in adr_client;
+    inet_aton(remoteHost, &adr_client.sin_addr);
+    // server address should always have address 100 in the local network
+    inet_aton("192.168.0.100", &adr_server.sin_addr);
+    server = inet_lnaof(adr_server.sin_addr);  
+    // but we want to use the same local network of the remote host 
+    // see routing table for rteth0 and rteht1
+    net = inet_netof(adr_client.sin_addr); 
+    struct in_addr adr_tmp = inet_makeaddr(net,server);
+    servAddr.sin_addr.s_addr =  adr_tmp.s_addr;
+    printf("preinitialized server adress to %s\n",inet_ntoa(servAddr.sin_addr));
+  }
 
   //  if (bind(udpSock, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0)
   if(rt_dev_bind(udp_socket_, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0)
@@ -152,28 +155,6 @@ void friUdp::Init(const char * remoteHost)
     }
 
 
-#ifdef HAVE_GETHOSTNAME
-  /* get IP(s) and port number and display them (just for
-     convenience, so debugging friOpen is easier) */
-  {
-    char hostname[100];
-    struct hostent * host;
-    int i;
-
-    gethostname(hostname, sizeof(hostname));
-    //host = gethostbyname(hostname);
-    host = gethostbyname("192.168.0.100");
-    for (i=0; host->h_addr_list[i]!=0; i++)
-      {
-	struct in_addr addr;
-	memcpy(&addr, host->h_addr_list[i], sizeof(addr));
-	printf("IP %s - Port %d\n", inet_ntoa(addr), serverPort);
-      }
-  }
-#endif // 
-
-  std::cout << "Sizeof Command Messages " << sizeof(tFriCmdData) << std::endl;
-  std::cout << "Sizeof Receive Messages " << sizeof(tFriMsrData) << std::endl;
 }
 
 
@@ -205,14 +186,9 @@ int friUdp::Recv(tFriMsrData *packet)
 
 	  return 0;
         }
-      // else
-      //   {
-      // 	  printf("received something, but wrong size %d (expected %d)...\n",
-      // 		 received, sizeof(tFriMsrData));
-      // 	  fflush(stdout);
-      //   }
     }
   memset(packet, 0, sizeof(tFriMsrData));
+
   return -1;
 }
 
@@ -221,13 +197,6 @@ int friUdp::Recv(tFriMsrData *packet)
 /* send one answer packet to KRC */
 int friUdp::Send(tFriCmdData *data)
 {
-  krcAddr.sin_family = AF_INET;
-#ifdef KRC_IP_ADDRESS
-  krcAddr.sin_addr.s_addr = inet_addr(KRC_IP_ADDRESS);
-#endif
-#ifdef KRC_RECEIVE_PORT
-  krcAddr.sin_port = htons(KRC_RECEIVE_PORT);
-#endif
 
   if ((udp_socket_ >= 0) && (ntohs(krcAddr.sin_port) != 0))
     {
@@ -235,10 +204,7 @@ int friUdp::Send(tFriCmdData *data)
       size = rt_dev_sendto(udp_socket_, (char *) data, sizeof(tFriCmdData), 0,
 			   (struct sockaddr*) &krcAddr, sizeof(krcAddr));
 
-      /*      int sent;
-	      sent = sendto(udpSock, (char *) data, sizeof(tFriCmdData), 0,
-		    (struct sockaddr *)&krcAddr, sizeof(krcAddr));
-      */
+
       if (size == sizeof(tFriCmdData))
         {
 	  return 0;
@@ -350,16 +316,12 @@ int friUdp::RecvPacket(int udp_socket,
 #else
       int sockAddrSize;
 #endif
-        
+
       sockAddrSize = sizeof(struct sockaddr_in);
 
       int size;
       size = rt_dev_recvfrom(udp_socket, (char *) data, sizeof(tFriMsrData), 0,
 			     (struct sockaddr *)&krcAddr, &sockAddrSize);
-      /* int received;
-	 received = recvfrom(udpSock, (char *) data, sizeof(tFriMsrData), 0,
-			  (struct sockaddr *)&krcAddr, &sockAddrSize);
-      */
 
       if(size < 0)
 	{

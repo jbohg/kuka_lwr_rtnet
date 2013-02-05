@@ -77,6 +77,11 @@ double T_s = 1.0/double(500);
 //RT_PIPE log_pipe;
 RT_TASK task;
 
+static const string ip_left = "192.168.0.20";
+static const string ip_right = "192.168.1.20";
+
+string ip;
+
 typedef struct{
   long time;
   int num_received_messages;
@@ -165,7 +170,8 @@ void mainControlLoop(void* cookie)
   long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
   */
 
-  friRemote friInst(49938, "192.168.0.20");
+  
+  friRemote friInst(49938, ip.c_str());
   //  friRemote friInst;
   FRI_QUALITY lastQuality = FRI_QUALITY_BAD;
   FRI_CTRL lastCtrlScheme = FRI_CTRL_OTHER;
@@ -350,10 +356,30 @@ main
 (int argc, char *argv[])
 {
 
+  if(argc>2) {
+    cout << "Wrong number of arguments" << endl << "Usage: " << argv[0] << " [left|right]" << endl;
+    exit(-1);
+  }
+
+  if(argc==2){
+    if(strcmp (argv[1], "left") == 0)
+      ip = ip_left;
+    else if(strcmp (argv[1], "right") == 0) {
+      ip = ip_right;
+    } else {
+      cout << "Wrong option." << endl << "Usage: " << argv[0] << " [left|right]" << endl;
+      exit(-1);
+    }
+  } else if(argc==1) {
+    ip = ip_left;
+  }
+  
+  cout << "Using IP " << ip << " for " << argv[1] << " arm." << endl;
+  
   //  int tmp = 0;
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
-  rt_task_shadow(NULL, "fri_second_rt", 50, 0);
+  rt_task_shadow(NULL, "fri_imp_rt", 50, 0);
   
 
   cout << "Opening FRI Version " 

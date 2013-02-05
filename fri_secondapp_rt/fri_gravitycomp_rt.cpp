@@ -74,8 +74,13 @@ bool going = true;
 int frequency = 500; //in Hz
 double T_s = 1.0/double(500);
 
-RT_PIPE log_pipe;
+//RT_PIPE log_pipe;
 RT_TASK task;
+
+static const string ip_left = "192.168.0.20";
+static const string ip_right = "192.168.1.20";
+
+string ip;
 
 typedef struct{
   long time;
@@ -156,11 +161,13 @@ void mainControlLoop(void* cookie)
   //  rt_task_set_periodic(NULL, TM_NOW, T_s * 1e9);
   rt_task_set_mode(0, T_WARNSW, NULL);
 
+  /*
   //memory allocation
   loop_monitoring log;
   long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
+  */
 
-  friRemote friInst(49938, "192.168.0.20");
+  friRemote friInst(49938, ip.c_str());
   //  friRemote friInst;
   FRI_QUALITY lastQuality = FRI_QUALITY_BAD;
   FRI_CTRL lastCtrlScheme = FRI_CTRL_OTHER;
@@ -190,7 +197,7 @@ void mainControlLoop(void* cookie)
       //
       friInst.setToKRLReal(0,friInst.getFrmKRLReal(1));
 
-
+      /*
       int divider = (int)( (1./friInst.getSampleTime()));
       if ( friInst.getSequenceCount() % divider == 0)
        	{
@@ -205,13 +212,14 @@ void mainControlLoop(void* cookie)
        	} else {
        	log.message = "";
       }
+      */
 
       if ( lastCtrlScheme != friInst.getCurrentControlScheme())
 	{
 	  //cout << "switching control scheme " << lastCtrlScheme;
 	  lastCtrlScheme = friInst.getCurrentControlScheme();
-	  log.message += "control scheme changed \n";
-	  log.control_mode = lastCtrlScheme;
+	  //  log.message += "control scheme changed \n";
+	  //	  log.control_mode = lastCtrlScheme;
 	  //	  cout << " to " << lastCtrlScheme;
 	}
       
@@ -263,12 +271,12 @@ void mainControlLoop(void* cookie)
 	      {
 		timeCounter=0.;
 	      }
-
+	    /*
 	    for (int i = 0; i < LBR_MNJ; i++)
 	      {
 		log.cur_jnt_vals[i] = newJntVals[i];
 	      }
-	    
+	    */
 	    // Call to data exchange - and the like 
 	    friInst.doJntImpedanceControl(newJntVals, 
 					  newJntStiff, 
@@ -293,7 +301,7 @@ void mainControlLoop(void* cookie)
 	  break;	  
 	}
 
-
+      /*
       if ( friInst.getQuality() != lastQuality)
        	{
        	  log.message += "quality change detected\n";
@@ -302,9 +310,9 @@ void mainControlLoop(void* cookie)
       
       // log content of message 
       log.num_received_messages++;
-      
+      */
 
-
+      /*
       if(lastQuality >= FRI_QUALITY_OK)
        	log.quality = 1;
       else 
@@ -317,6 +325,7 @@ void mainControlLoop(void* cookie)
 
       rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
       log.time = long(rt_timer_ticks2ns(rt_timer_read())) - t_1;
+      */
     }
 }
 
@@ -336,10 +345,30 @@ main
 (int argc, char *argv[])
 {
 
-  int tmp = 0;
+  if(argc>2) {
+    cout << "Wrong number of arguments" << endl << "Usage: " << argv[0] << " [left|right]" << endl;
+    exit(-1);
+  }
+
+  if(argc==2){
+    if(strcmp (argv[1], "left") == 0)
+      ip = ip_left;
+    else if(strcmp (argv[1], "right") == 0) {
+      ip = ip_right;
+    } else {
+      cout << "Wrong option." << endl << "Usage: " << argv[0] << " [left|right]" << endl;
+      exit(-1);
+    }
+  } else if(argc==1) {
+    ip = ip_left;
+  }
+
+  cout << "Using IP " << ip << " for " << argv[1] << " arm." << endl;
+
+  //  int tmp = 0;
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
-  rt_task_shadow(NULL, "fri_second_rt", 50, 0);
+  rt_task_shadow(NULL, "fri_gravcomp_rt", 50, 0);
   
 
   cout << "Opening FRI Version " 
@@ -360,7 +389,7 @@ main
 	
       }
   }
-  
+  /*
   if((tmp = rt_pipe_create(&log_pipe, "log_pipe", P_MINOR_AUTO, 0)))
     {
       std::cout << "cannot create print pipe, error " << tmp << std::endl;
@@ -368,8 +397,8 @@ main
     }
 
   boost::thread log_thread(logTask);
-
-  rt_task_create(&task, "Real time loop", 0, 50, T_JOINABLE | T_FPU);
+  */
+  rt_task_create(&task, "Real time loop 2", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&task, &mainControlLoop, NULL);
   rt_task_sleep(1e6);  
   
@@ -380,9 +409,9 @@ main
   going = false;
   rt_task_join(&task);
 
-  rt_pipe_delete(&log_pipe);
+  //  rt_pipe_delete(&log_pipe);
   
-  log_thread.join();
+  //  log_thread.join();
 
   return EXIT_SUCCESS;
 }  
