@@ -74,7 +74,7 @@ bool going = true;
 int frequency = 500; //in Hz
 double T_s = 1.0/double(500);
 
-//RT_PIPE log_pipe;
+RT_PIPE log_pipe;
 RT_TASK task;
 
 static const string ip_left = "192.168.0.20";
@@ -90,6 +90,8 @@ typedef struct{
   int mode;
   int control_mode;
   string message;
+  string cmd;
+  string msr;
 } loop_monitoring;
 
 void waitForEnter()
@@ -134,6 +136,7 @@ void logTask()
 	{
 	  fprintf(log_file, "%ld ", log.time);
 	  fprintf(log_file, "%d ", log.num_received_messages);
+	  fprintf(log_file, "%s", log.message.c_str());
 	  for (int i = 0; i < LBR_MNJ; i++)
 	    fprintf(log_file, "%f ", log.cur_jnt_vals[i]);
 	  
@@ -141,7 +144,11 @@ void logTask()
 	  fprintf(log_file, "%d ", log.control_mode);
 	  fprintf(log_file, "%d ", log.mode);
 	  fprintf(log_file, "\n");
-	  fprintf(log_file, "%s ", log.message.c_str());
+	  fprintf(log_file, "MSR...............\n");
+	  fprintf(log_file, "%s\n", log.msr.c_str());
+	  fprintf(log_file, "CMD...............\n");
+	  fprintf(log_file, "%s\n", log.cmd.c_str());
+	  fprintf(log_file, "\n");
 	}
       reading = true;
       if(!((size = read(fd,&log,sizeof(log))) == sizeof(log)))
@@ -161,11 +168,11 @@ void mainControlLoop(void* cookie)
   //  rt_task_set_periodic(NULL, TM_NOW, T_s * 1e9);
   rt_task_set_mode(0, T_WARNSW, NULL);
 
-  /*
+  
   //memory allocation
   loop_monitoring log;
   long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
-  */
+  
 
   friRemote friInst(49938, ip.c_str());
   //  friRemote friInst;
@@ -181,6 +188,7 @@ void mainControlLoop(void* cookie)
   while(going)
     {
       friInst.doReceiveData();
+      log.msr = friInst.getCurrentRecvMsr();
       
       /// perform some arbitrary handshake to KRL -- possible in monitor mode already
       // send to krl int a value
@@ -216,73 +224,46 @@ void mainControlLoop(void* cookie)
 
       if ( lastCtrlScheme != friInst.getCurrentControlScheme())
 	{
-	  //cout << "switching control scheme " << lastCtrlScheme;
 	  lastCtrlScheme = friInst.getCurrentControlScheme();
-	  //  log.message += "control scheme changed \n";
-	  //	  log.control_mode = lastCtrlScheme;
-	  //	  cout << " to " << lastCtrlScheme;
+	  log.message += "control scheme changed\n";
+	  log.control_mode = lastCtrlScheme;
+	} 
+      else 
+	{
+	  log.message = "";
 	}
       
+
       switch ( friInst.getCurrentControlScheme())
 	{
 	case   FRI_CTRL_JNT_IMP:
 	  {
-	    //	    log.message = "Control scheme is JNT impedance control";
+	    log.message += "Control scheme is JNT impedance control\n";
 	    float newJntVals[LBR_MNJ];
 	    float newJntStiff[LBR_MNJ];
 	    float newJntDamp[LBR_MNJ];
 	    float newJntAddTorque[LBR_MNJ];
 	    for (int i = 0; i < LBR_MNJ; i++)
 	      {
-		newJntVals[i] = friInst.getMsrMsrJntPosition()[i];
-		if(first){
-		  firstJntVals[i] = friInst.getMsrMsrJntPosition()[i];
-		}
+		newJntVals[i] = friInst.getMsrCmdJntPosition()[i];
 		newJntStiff[i] = 0.0;
 		newJntDamp[i] = 0.0;
 		newJntAddTorque[i] = 0.0;
-	      }
-
-	    if(first)
-	      first = false;
+	      }	    
 	    
-	    /* Sample - if in command mode - and motor on - 
-	       perform some sort of sinewave motion */
-	    if ( friInst.getState() == FRI_STATE_CMD)
-	      {
-		if ( friInst.isPowerOn() )
-		  {
-		    timeCounter+=friInst.getSampleTime();
-		    for (int i = 0; i < LBR_MNJ; i++)
-		      {
-			// just do gravity comp
-			newJntVals[i] = friInst.getMsrMsrJntPosition()[i];//firstJntVals[i];
-			newJntStiff[i] = 0.0;
-			newJntDamp[i] = 0.0;
-			newJntAddTorque[i] = 0.0;
-		      }
-		  }
-		else
-		  {
-		    timeCounter=0.;
-		  }
-	      }
-	    else
-	      {
-		timeCounter=0.;
-	      }
-	    /*
 	    for (int i = 0; i < LBR_MNJ; i++)
 	      {
 		log.cur_jnt_vals[i] = newJntVals[i];
 	      }
-	    */
+	    
 	    // Call to data exchange - and the like 
 	    friInst.doJntImpedanceControl(newJntVals, 
 					  newJntStiff, 
 					  newJntDamp, 
 					  newJntAddTorque, 
 					  false);
+	    
+	    log.message+=friInst.getCurrentCommandFlags();
 	  }
 	  break;
 	default:
@@ -292,7 +273,7 @@ void mainControlLoop(void* cookie)
 
       // Send packages 
       friInst.doSendData();
-      
+      log.cmd = friInst.getCurrentSentCmd();
 
       // Stop request is issued from the other side
       if ( friInst.getFrmKRLInt(0) == -1) 
@@ -301,7 +282,7 @@ void mainControlLoop(void* cookie)
 	  break;	  
 	}
 
-      /*
+      
       if ( friInst.getQuality() != lastQuality)
        	{
        	  log.message += "quality change detected\n";
@@ -310,9 +291,9 @@ void mainControlLoop(void* cookie)
       
       // log content of message 
       log.num_received_messages++;
-      */
+      
 
-      /*
+      
       if(lastQuality >= FRI_QUALITY_OK)
        	log.quality = 1;
       else 
@@ -325,7 +306,7 @@ void mainControlLoop(void* cookie)
 
       rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
       log.time = long(rt_timer_ticks2ns(rt_timer_read())) - t_1;
-      */
+      
     }
 }
 
@@ -364,13 +345,9 @@ main
   }
 
   cout << "Using IP " << ip << " for " << argv[1] << " arm." << endl;
-
-  //  int tmp = 0;
   
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-  rt_task_shadow(NULL, "fri_gravcomp_rt", 50, 0);
+  int tmp = 0;
   
-
   cout << "Opening FRI Version " 
        << FRI_MAJOR_VERSION << "." << FRI_SUB_VERSION 
        << "." <<FRI_DATAGRAM_ID_CMD << "." <<FRI_DATAGRAM_ID_MSR 
@@ -389,7 +366,11 @@ main
 	
       }
   }
-  /*
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+  rt_task_shadow(NULL, "fri_gravcomp_rt", 50, 0);
+  
+  
   if((tmp = rt_pipe_create(&log_pipe, "log_pipe", P_MINOR_AUTO, 0)))
     {
       std::cout << "cannot create print pipe, error " << tmp << std::endl;
@@ -397,8 +378,9 @@ main
     }
 
   boost::thread log_thread(logTask);
-  */
-  rt_task_create(&task, "Real time loop 2", 0, 50, T_JOINABLE | T_FPU);
+  
+
+  rt_task_create(&task, "Real time loop", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&task, &mainControlLoop, NULL);
   rt_task_sleep(1e6);  
   
@@ -409,9 +391,9 @@ main
   going = false;
   rt_task_join(&task);
 
-  //  rt_pipe_delete(&log_pipe);
+  rt_pipe_delete(&log_pipe);
   
-  //  log_thread.join();
+  log_thread.join();
 
   return EXIT_SUCCESS;
 }  

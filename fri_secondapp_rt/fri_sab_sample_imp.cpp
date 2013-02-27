@@ -238,10 +238,16 @@ void mainControlLoop(void* cookie)
 	    float newJntAddTorque[LBR_MNJ];
 	    for (int i = 0; i < LBR_MNJ; i++)
 	      {
-		newJntVals[i] = friInst.getMsrMsrJntPosition()[i];
+		/*
 		if(first){
 		  firstJntVals[i] = friInst.getMsrMsrJntPosition()[i];
 		}
+		newJntVals[i] =	firstJntVals[i];
+		newJntStiff[i] = 100.0;
+		newJntDamp[i] = 0.5;
+		newJntAddTorque[i] = 0.0;
+		*/
+		newJntVals[i] = friInst.getMsrMsrJntPosition()[i];
 		newJntStiff[i] = 0.0;
 		newJntDamp[i] = 0.0;
 		newJntAddTorque[i] = 0.0;
@@ -250,32 +256,6 @@ void mainControlLoop(void* cookie)
 	    if(first)
 	      first = false;
 	    
-	    /* Sample - if in command mode - and motor on - 
-	       perform some sort of sinewave motion */
-	    if ( friInst.getState() == FRI_STATE_CMD)
-	      {
-		if ( friInst.isPowerOn() )
-		  {
-		    timeCounter+=friInst.getSampleTime();
-		    for (int i = 0; i < LBR_MNJ; i++)
-		      {
-			// just do spring movement from first joint position
-			newJntVals[i] =	firstJntVals[i];
-			newJntStiff[i] = 100.0;
-			newJntDamp[i] = 0.5;
-			newJntAddTorque[i] = 0.0;
-			//=(float)sin( timeCounter * M_PI * 0.03) * (1.);
-		      }
-		  }
-		else
-		  {
-		    timeCounter=0.;
-		  }
-	      }
-	    else
-	      {
-		timeCounter=0.;
-	      }
 
 	    /*	    
 	    for (int i = 0; i < LBR_MNJ; i++)

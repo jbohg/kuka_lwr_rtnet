@@ -47,6 +47,7 @@
 
 
 #include "friudp_rt.h"
+#include <string.h>
 
 class friRemote
 {
@@ -137,6 +138,10 @@ class friRemote
   FRI_STATE getState()      { return (FRI_STATE)msr.intf.state;   }
   FRI_QUALITY getQuality()  { return (FRI_QUALITY)msr.intf.quality; }
   FRI_CTRL getCurrentControlScheme (){ return (FRI_CTRL)msr.robot.control; }
+  
+  std::string getCurrentCommandFlags (){ return flags; }
+  std::string getCurrentSentCmd (){ return sent_cmd; }
+  std::string getCurrentRecvMsr (){ return recv_msr; }
 
   bool isPowerOn() { return msr.robot.power!=0; }
   /* @} */
@@ -184,6 +189,9 @@ class friRemote
  private:
   friUdp remote;
   int seqCount;
+  std::string flags;
+  std::string recv_msr;
+  std::string sent_cmd;
 };
 
 

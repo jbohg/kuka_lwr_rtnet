@@ -99,7 +99,7 @@ void friUdp::Init(const char * remoteHost)
   memset(&krcAddr, 0, sizeof(krcAddr));
 
   /* socket creation */
-  int udp_socket_ = rt_dev_socket(AF_INET, SOCK_DGRAM, 0);
+  udp_socket_ = rt_dev_socket(AF_INET, SOCK_DGRAM, 0);
   if ( udp_socket_< 0)
     {
       printf("cannot create listener sock, error: %d, %s", errno, strerror(errno));

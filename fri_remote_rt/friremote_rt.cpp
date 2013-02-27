@@ -44,8 +44,11 @@
 #include "friremote_rt.h"
 
 #include <iostream>
+#include <sstream>
 #include <stdlib.h>
 #include <native/task.h>
+
+std::ostringstream stream;
 
 friRemote::friRemote(int port, const char *hintToRemoteHost) 
   : remote(port,hintToRemoteHost)
@@ -83,7 +86,12 @@ friRemote::~friRemote()
 
 int friRemote::doReceiveData()
 {
-  return remote.Recv(&msr);
+  int rc = remote.Recv(&msr);
+
+  std::ostringstream stream;
+  stream << msr;
+  recv_msr = stream.str();
+  return rc;
 }
 
 
@@ -98,6 +106,10 @@ int friRemote::doSendData()
   cmd.head.datagramId = FRI_DATAGRAM_ID_CMD;
   cmd.head.packetSize = sizeof(tFriCmdData);
   int rc=remote.Send(&cmd);
+
+  std::ostringstream stream;
+  stream << cmd;
+  sent_cmd = stream.str();
   return rc;
 }
 
@@ -118,6 +130,7 @@ void friRemote::doTest()
 {
   // just mirror the old values
   cmd.cmd.cmdFlags=FRI_CMD_JNTPOS;
+  flags="FRI_CMD_JNTPOS\n";
   for (int i = 0; i < LBR_MNJ; i++)
       cmd.cmd.jntPos[i]=msr.data.cmdJntPos[i]+msr.data.cmdJntPosFriOffset[i];
 }
@@ -174,9 +187,11 @@ int friRemote::doJntImpedanceControl(const float newJntPosition[LBR_MNJ],
 {
   // Helper, if not properly initialized or the like...
   cmd.cmd.cmdFlags=0;
+  flags = "";
   if (newJntPosition)
     {
       cmd.cmd.cmdFlags|=FRI_CMD_JNTPOS;
+      flags+="FRI_CMD_JNTPOS";
       // Note:: If the interface is not in Command mode,
       // The commands have to be "mirrored" to get in sync
       if ((getState() != FRI_STATE_CMD) || (!isPowerOn()))
@@ -193,21 +208,25 @@ int friRemote::doJntImpedanceControl(const float newJntPosition[LBR_MNJ],
 	    cmd.cmd.jntPos[i]=newJntPosition[i];
 	}
     }
+
   if (newJntStiff)
     {
       cmd.cmd.cmdFlags|=FRI_CMD_JNTSTIFF;
+      flags+="|FRI_CMD_JNTSTIFF";
       for (int i = 0; i < LBR_MNJ; i++)
 	cmd.cmd.jntStiffness[i]=newJntStiff[i];
     }
   if (newJntDamp)
     {
       cmd.cmd.cmdFlags|=FRI_CMD_JNTDAMP;
+      flags+="|FRI_CMD_JNTDAMP";
       for (int i = 0; i < LBR_MNJ; i++)
 	cmd.cmd.jntDamping[i]=newJntDamp[i];
     }
   if (newJntAddTorque)
     {
       cmd.cmd.cmdFlags|=FRI_CMD_JNTTRQ;
+      flags+="|FRI_CMD_JNTTRQ\n";
       for (int i = 0; i < LBR_MNJ; i++)
 	cmd.cmd.addJntTrq[i]=newJntAddTorque[i];
     }

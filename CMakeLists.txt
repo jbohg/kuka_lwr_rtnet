@@ -56,6 +56,15 @@ target_link_libraries(friTestRT
   #-lutility
   )
 
+ADD_EXECUTABLE(friBiManualRT
+  fri_test_rt/fridual_rt.cpp)
+target_link_libraries(friBiManualRT
+  ${PROJECT_NAME}_RT
+  ${XENO_NATIVE_LDFLAGS} -lrtdm
+  ${Boost_LIBRARIES}
+  #-lutility
+  )
+
 ADD_EXECUTABLE(friFirstAppRT
   fri_firstapp_rt/frifirstapp_rt.cpp)
 target_link_libraries(friFirstAppRT
