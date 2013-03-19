@@ -257,7 +257,7 @@ void mainControlLoop(void* cookie)
 	      }
 	    
 	    // Call to data exchange - and the like 
-	    friInst.doJntImpedanceControl(newJntVals, 
+	    friInst.doJntImpedanceControl(NULL,//newJntVals, 
 					  newJntStiff, 
 					  newJntDamp, 
 					  newJntAddTorque, 

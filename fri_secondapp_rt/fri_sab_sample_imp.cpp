@@ -238,7 +238,7 @@ void mainControlLoop(void* cookie)
 	    float newJntAddTorque[LBR_MNJ];
 	    for (int i = 0; i < LBR_MNJ; i++)
 	      {
-		/*
+		
 		if(first){
 		  firstJntVals[i] = friInst.getMsrMsrJntPosition()[i];
 		}
@@ -246,11 +246,13 @@ void mainControlLoop(void* cookie)
 		newJntStiff[i] = 100.0;
 		newJntDamp[i] = 0.5;
 		newJntAddTorque[i] = 0.0;
-		*/
+		
+		/*
 		newJntVals[i] = friInst.getMsrMsrJntPosition()[i];
 		newJntStiff[i] = 0.0;
 		newJntDamp[i] = 0.0;
 		newJntAddTorque[i] = 0.0;
+		*/
 	      }
 
 	    if(first)

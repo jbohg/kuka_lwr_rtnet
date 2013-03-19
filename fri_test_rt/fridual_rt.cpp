@@ -201,9 +201,7 @@ int main (int argc, char *argv[])
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
   rt_task_shadow(NULL, "fri_bimanual_rt", 50, 0);
-  
-
-  
+    
   rt_task_create(&right_task, "Right loop", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&right_task, &rightControlLoop, NULL);
   rt_task_sleep(1e6);

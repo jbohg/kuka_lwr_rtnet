@@ -106,14 +106,19 @@ void friUdp::Init(const char * remoteHost)
       exit(1);
     }
 
-  //make the socket non blocking
-  int64_t tout = 5 * 20000000000;
+  
+  // make the socket non blocking after a specific amount of nanoseconds
+  //int64_t tout = 5 * 20000000000;
+  // 0.5 milliseconds
+  int64_t tout = 1*10000;
+  // let socket immidiately return
+  // int64_t tout = -1;
   if(rt_dev_ioctl(udp_socket_, RTNET_RTIOC_TIMEOUT, &tout) < 0)
     {
       printf("cannot make socket non-blocking, error: %d, %s", errno, strerror(errno));
       exit(-1);
     }
-  
+    
   /* bind local server port */
   servAddr.sin_family = AF_INET;
   servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -148,10 +153,10 @@ void friUdp::Init(const char * remoteHost)
   // preinitialize the socket properly
   if ( remoteHost ) 
     {
-      printf("preinitialized remote host to %s\n",remoteHost);
       krcAddr.sin_addr.s_addr = inet_addr(remoteHost);
       krcAddr.sin_family = AF_INET;
       krcAddr.sin_port=htons(serverPort);
+      printf("preinitialized remote host to %s and port %d\n",remoteHost, htons(serverPort));
     }
 
 
@@ -168,7 +173,7 @@ int friUdp::Recv(tFriMsrData *packet)
       struct timeval ts;
       
       received = RecvPacket(udp_socket_, packet, &ts, &krcAddr);
-      
+
       if (received == sizeof(tFriMsrData))
         {
 #ifdef HAVE_TIME_STAMP_RECEIVE
@@ -185,7 +190,7 @@ int friUdp::Recv(tFriMsrData *packet)
 #endif // HAVE_TIME_STAMP
 
 	  return 0;
-        }
+        } 
     }
   memset(packet, 0, sizeof(tFriMsrData));
 
@@ -198,6 +203,14 @@ int friUdp::Recv(tFriMsrData *packet)
 int friUdp::Send(tFriCmdData *data)
 {
 
+#ifdef KRC_IP_ADDRESS
+  krcAddr.sin_addr.s_addr = inet_addr(KRC_IP_ADDRESS);
+#endif
+#ifdef KRC_RECEIVE_PORT
+  krcAddr.sin_port = htons(KRC_RECEIVE_PORT);
+#endif
+  
+  //  printf("krc sending port %d\n", krcAddr.sin_port);
   if ((udp_socket_ >= 0) && (ntohs(krcAddr.sin_port) != 0))
     {
       ssize_t size;
@@ -321,19 +334,17 @@ int friUdp::RecvPacket(int udp_socket,
 
       int size;
       size = rt_dev_recvfrom(udp_socket, (char *) data, sizeof(tFriMsrData), 0,
-			     (struct sockaddr *)&krcAddr, &sockAddrSize);
+			     (struct sockaddr *)client, &sockAddrSize);
 
       if(size < 0)
 	{
 	  //return -1;
 	  if ((size == -EWOULDBLOCK) | (size == -EAGAIN))
 	    { // no msg was available
-	      //	      printf("No message in socket\n");
 	      return UDP_TIMEOUT_ERROR;
 	    }
 	  else
 	    {
-	      //	      printf("error in receiving message - error %d\n", size);
 	      return UDP_RECEIVE_SYSCALL_ERROR;//another error occured
 	    }
 	} else {

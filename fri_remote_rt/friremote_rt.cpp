@@ -52,7 +52,9 @@ std::ostringstream stream;
 
 friRemote::friRemote(int port, const char *hintToRemoteHost) 
   : remote(port,hintToRemoteHost)
-    //  , seqCount(0)
+  , seqCount(0)
+  , inCount(0)
+  , outCount(0)
 {
   std::cout << __FUNCTION__ << " " <<port <<std::endl;
   std::cout << "FRI Version " << FRI_MAJOR_VERSION 
@@ -86,11 +88,19 @@ friRemote::~friRemote()
 
 int friRemote::doReceiveData()
 {
+  inCount = msr.head.sendSeqCount;
   int rc = remote.Recv(&msr);
+  if(inCount == msr.head.sendSeqCount){
+    std::ostringstream stream;
+    stream << "RECEIVED old package twice\n";
+    sent_cmd = stream.str();
+  }
 
+  /*
   std::ostringstream stream;
   stream << msr;
   recv_msr = stream.str();
+  */
   return rc;
 }
 
@@ -99,6 +109,15 @@ int friRemote::doReceiveData()
 int friRemote::doSendData()
 {
   
+  std::ostringstream stream;
+  stream << "Old seqCount in: " << cmd.head.reflSeqCount << std::endl;
+  stream << "New seqCount in: " << msr.head.sendSeqCount << std::endl;
+
+  stream << "Old seqCount out: " << msr.head.reflSeqCount << std::endl;
+  stream << "New seqCount out: " << seqCount << std::endl;
+
+  sent_cmd = stream.str();
+
   // received at least something 
   seqCount++;
   cmd.head.sendSeqCount = seqCount;
@@ -107,9 +126,12 @@ int friRemote::doSendData()
   cmd.head.packetSize = sizeof(tFriCmdData);
   int rc=remote.Send(&cmd);
 
+  /*
   std::ostringstream stream;
   stream << cmd;
   sent_cmd = stream.str();
+  */
+
   return rc;
 }
 

@@ -98,10 +98,11 @@ void mainControlLoop(void* cookie)
   friRemote friInst(49938, "192.168.0.20");
   //  friRemote friInst;
   FRI_QUALITY lastQuality = FRI_QUALITY_BAD;
+  int res;
   /* enter main loop - wait until we enter stable command mode */
   while(going)
     {
-      friInst.doReceiveData();
+      res = friInst.doReceiveData();
 
       /// perform some arbitrary handshake to KRL -- possible in monitor mode already
       // send to krl int a value
@@ -121,9 +122,9 @@ void mainControlLoop(void* cookie)
       // Mirror old joint values 
       friInst.doTest();
       
-      
-      // Send packages 
-      friInst.doSendData();
+      // Send packages if a package has been received
+      if(res==0)
+	friInst.doSendData();
 
       // Stop request is issued from the other side
       if ( friInst.getFrmKRLInt(0) == -1) 

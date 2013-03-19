@@ -192,6 +192,10 @@ class friRemote
   std::string flags;
   std::string recv_msr;
   std::string sent_cmd;
+
+  int inCount;
+  int outCount;
+
 };
 
 

@@ -70,18 +70,23 @@
 using namespace std;
 
 bool going = true;
-int frequency = 500; //in Hz
-double T_s = 1.0/double(500);
+int frequency = 1000; //in Hz
+double T_s = 1.0/double(frequency);
+
+static const string ip_left = "192.168.0.20";
 
 RT_PIPE log_pipe;
 RT_TASK task;
 
+long previous_read, before_read, before_write;
+       
+
 typedef struct{
-  long time;
-  int num_received_messages;
-  float cur_jnt_vals[LBR_MNJ];
-  int quality;
-  int mode;
+  //  long time;
+  //  int num_received_messages;
+  //  float cur_jnt_vals[LBR_MNJ];
+  //  int quality;
+  //  int mode;
   string message;
 } loop_monitoring;
 
@@ -124,7 +129,7 @@ void logTask()
     {
       if(reading)
 	{
-	  fprintf(log_file, "%ld ", log.time);
+	  /*	  fprintf(log_file, "%ld ", log.time);
 	  fprintf(log_file, "%d ", log.num_received_messages);
 	  for (int i = 0; i < LBR_MNJ; i++)
 	    fprintf(log_file, "%f ", log.cur_jnt_vals[i]);
@@ -132,6 +137,7 @@ void logTask()
 	  fprintf(log_file, "%d ", log.quality);
 	  fprintf(log_file, "%d ", log.mode);
 	  fprintf(log_file, "\n");
+	  */
 	  fprintf(log_file, "%s ", log.message.c_str());
 	}
       reading = true;
@@ -148,28 +154,48 @@ void logTask()
 
 void mainControlLoop(void* cookie)
 {
+  
   signal(SIGXCPU, warnOnSwitchToSecondaryMode);
   
-  //  rt_task_set_periodic(NULL, TM_NOW, T_s * 1e9);
-  rt_task_set_mode(0, T_WARNSW, NULL);
+  rt_task_set_periodic(NULL, TM_NOW, T_s * 1e9);
+  rt_task_set_mode(0, T_WARNSW, NULL);  
+  rt_task_wait_period(NULL);
+
+  friRemote friInst(49938, ip_left.c_str());
+
+  int ret;
+  unsigned long overrun;
   
   //memory allocation
   loop_monitoring log;
   
-  long t_1 = long(rt_timer_ticks2ns(rt_timer_read()));
-  //rt_task_wait_period(NULL);
-  
-  string ip("192.168.1.20");
-  friRemote friInst(49938, ip.c_str());
-  //  friRemote friInst;
   FRI_QUALITY lastQuality = FRI_QUALITY_BAD;
-  double timeCounter=0;
+  int res;
+  before_read = long(rt_timer_ticks2ns(rt_timer_read()));
+   
+  string cmd;
   
   /* enter main loop - wait until we enter stable command mode */
   while(going)
     {
-      friInst.doReceiveData();
+      ret = rt_task_wait_period(&overrun);
+      before_read = long(rt_timer_ticks2ns(rt_timer_read()));
 
+      std::stringstream buffer;
+      if(ret !=0 )
+	buffer << "Timing error\n";
+      if (ret == -EWOULDBLOCK) {
+	buffer << "EWOULBLOCK while rt_task_wait_period. Overrun: " << overrun << "\n";
+      } else if(ret == -EINTR){
+	buffer << "EINTR while rt_task_wait_period. Overrun: " << overrun << "\n";
+      } else if(ret == -ETIMEDOUT){
+	buffer << "ETIMEDOUT while rt_task_wait_period. Overrun: " << overrun << "\n";
+      } else if(ret == -EPERM){
+	buffer << "EPERM while rt_task_wait_period\n";
+      }      
+      
+      res = friInst.doReceiveData();
+      
       /// perform some arbitrary handshake to KRL -- possible in monitor mode already
       // send to krl int a value
       friInst.setToKRLInt(0,1);
@@ -178,118 +204,34 @@ void mainControlLoop(void* cookie)
 	{
 	  // send a second marker
 	  friInst.setToKRLInt(0,10);
-	}//   else 
-      // {
-      
-      //   std::cout << "Quality not ok!" << std::endl;
-      // }
-      
+	}
       //
       // just mirror the real value..
       //
       friInst.setToKRLReal(0,friInst.getFrmKRLReal(1));
-     
-      // Prepare a new position command - if we are in command mode
-      float newJntVals[LBR_MNJ];
-      for (int i = 0; i < LBR_MNJ; i++)
-	{
-	  newJntVals[i] = friInst.getMsrCmdJntPosition()[i];
-	}
       
-      /** Sample - if in command mode - and motor on - 
-	  perform some sort of sinewave motion */
-      if ( friInst.getState() == FRI_STATE_CMD)
-	{
-	  //	  cout << "We are in CMD mode" << endl;
-	  if ( friInst.isPowerOn() )
-	    {
-	      timeCounter+=friInst.getSampleTime();
-	      for (int i = 0; i < LBR_MNJ; i++)
-		{
-		  // perform some sort of sine wave motion
-		  
-		  newJntVals[i]+=(float)sin( timeCounter * M_PI * 0.25) * (float)(10./180.*M_PI);
-		}
-	    }
-	  else
-	    {
-	      timeCounter=0.;
-	    }
-	}
-      else
-	{
-	  //  cout << "We are NOT in CMD mode" << endl;
-	  timeCounter=0.;
-	}
-      // doPositionControl without data exchange
-      friInst.doPositionControl(newJntVals, false);
+      // Mirror old joint values 
+      friInst.doTest();
       
-      // Send packages 
-      friInst.doSendData();
+      before_write = long(rt_timer_ticks2ns(rt_timer_read()));
+      // Send packages if a package has been received 
+      // (don't flood the socket with CMDs -> this will lead to a can bus error on the robot)
+      if(res ==0 ){
+	friInst.doSendData();
+	cmd = friInst.getCurrentSentCmd ();
 
-      
-      //      std::cout << "Dong some statistics gathering " << std::endl;
-      // have some debug information every n.th. step
-      int divider = (int)( (1./friInst.getSampleTime()));
-      if ( friInst.getSequenceCount() % divider == 0)
-       	{
-       	  std::stringstream buffer;
-       	  buffer << "krl interaction \n" << friInst.getMsrBuf().krl 
-       		 << "intf stat interaction \n" << friInst.getMsrBuf().intf.stat 
-       		 << "smpl " << friInst.getSampleTime() << endl;
-	  
-       	  log.message = buffer.str();
-	  
-      
-       	} else {
-       	log.message = "";
+	
+	buffer << "Time since last valid read: " <<  (before_read-previous_read) / 1000000 
+	       << "." << setfill('0') << setw(6) <<(before_read-previous_read) % 1000000 << "ms" << endl;
+	buffer << cmd;
+	log.message = buffer.str();
+	rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
+	previous_read = before_read;
       }
-      
-            
-      // Stop request is issued from the other side
-      if ( friInst.getFrmKRLInt(0) == -1) 
-	{
-	  cout << "leaving \n";
-	  break;	  
-	}
-      
-      
-      //      std::cout << "Checking for quality changes " << std::endl;
-      //
-      // Quality change leads to output of statistics
-      // for informational reasons
-      //
-      if ( friInst.getQuality() != lastQuality)
-       	{
-       	  log.message += "quality change detected\n";
-	} 
-
-     
-      // log content of message 
-      log.num_received_messages++;
-      for (int i = 0; i < LBR_MNJ; i++)
-       	{
-      	  log.cur_jnt_vals[i] = newJntVals[i];
-       	}
-      
-      if(lastQuality >= FRI_QUALITY_OK)
-       	log.quality = 1;
-      else 
-       	log.quality = 0;
-      
-      if( friInst.getState() == FRI_STATE_CMD)
-       	log.mode = 1;
-      else 
-       	log.mode = 0;
-
-      //      std::cout << "Writing things to the logpipe " << std::endl;
-
-      rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
-      log.time = long(rt_timer_ticks2ns(rt_timer_read())) - t_1;
-      
     }
-  
-  /* and leave it on */ 
+
+  return;
+
 }
 
 
@@ -346,6 +288,7 @@ main
       }
   }
 
+  
   if((tmp = rt_pipe_create(&log_pipe, "log_pipe", P_MINOR_AUTO, 0)))
     {
       std::cout << "cannot create print pipe, error " << tmp << std::endl;
@@ -354,6 +297,7 @@ main
 
   boost::thread log_thread(logTask);
   
+
   rt_task_create(&task, "Real time loop", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&task, &mainControlLoop, NULL);
   rt_task_sleep(1e6);  
