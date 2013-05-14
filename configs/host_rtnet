@@ -1,0 +1,84 @@
+#! /bin/sh
+ 
+RTNETPATH=/usr/local/rtnet/sbin/
+
+debug_func() {
+    echo "$*"
+    eval $*
+}
+
+case "$1" in
+start)
+echo "Starting rtnet from $RTNETPATH"
+ifdown eth0
+ifdown eth1
+ifdown eth2
+ifdown eth3
+ifdown eth4
+ifdown eth5
+rmmod tg3
+rmmod e1000e
+sleep 1
+insmod /usr/local/rtnet/modules/rtnet.ko
+sleep 1
+insmod /usr/local/rtnet/modules/rtipv4.ko
+insmod /usr/local/rtnet/modules/rtcfg.ko
+insmod /usr/local/rtnet/modules/rtpacket.ko
+insmod /usr/local/rtnet/modules/rtudp.ko
+insmod /usr/local/rtnet/modules/rt_e1000.ko cards=1,1,0,0
+sleep 1
+insmod /usr/local/rtnet/modules/rtcap.ko
+
+echo "Setting up rtifconfig..."
+debug_func $RTNETPATH/rtifconfig rteth0 up 192.168.0.100 netmask 255.255.255.0 hw ether a0:36:9f:0d:65:9d
+debug_func $RTNETPATH/rtifconfig rteth1 up 192.168.1.100 netmask 255.255.255.0 hw ether a0:36:9f:0d:65:9c
+#$RTNETPATH/rtifconfig rteth2 up 192.168.2.100 netmask 255.255.255.0 hw ether a0:36:9f:0d:65:9f
+#$RTNETPATH/rtifconfig rteth3 up 192.168.3.100 netmask 255.255.255.0 hw ether a0:36:9f:0d:65:9e
+$RTNETPATH/rtifconfig
+
+# setup route to the kuka computer
+echo "Setting up rtroute..."
+$RTNETPATH/rtroute add 192.168.0.20 00:1b:21:c0:7e:ad dev rteth0
+$RTNETPATH/rtroute add 192.168.1.20 00:1b:21:c0:7e:29 dev rteth1
+$RTNETPATH/rtroute
+
+echo "Setting up ifconfig..."
+ifconfig rteth0 up 192.168.0.100 netmask 255.255.255.0 hw ether A0:36:9F:0D:65:9D
+ifconfig rteth1 up 192.168.1.100 netmask 255.255.255.0 hw ether a0:36:9f:0d:65:9c
+#ifconfig rteth2 up 192.168.2.100 netmask 255.255.255.0 hw ether a0:36:9f:0d:65:9f
+#ifconfig rteth3 up 192.168.3.100 netmask 255.255.255.0 hw ether a0:36:9f:0d:65:9e
+ifconfig
+
+echo "Loading non-rt ethernet..."
+modprobe tg3
+sleep 1
+ifconfig eth4 up
+ifconfig
+;;
+restart)
+$0 stop
+$0 start
+;;
+stop)
+echo "Stopping rtnet from $RTNETPATH"
+echo "Shutting down rtifconfig..."
+$RTNETPATH/rtifconfig rteth0 down
+$RTNETPATH/rtifconfig rteth1 down
+#$RTNETPATH/rtifconfig rteth2 down
+#$RTNETPATH/rtifconfig rteth3 down
+rmmod rtcap.ko
+rmmod rt_e1000.ko
+sleep 1
+rmmod rtpacket.ko
+rmmod rtcfg.ko
+rmmod rtudp.ko
+rmmod rtipv4.ko
+rmmod rtnet.ko
+
+;;
+*)
+echo $"usage: $0 {start|stop|restart}"
+exit 3
+;;
+esac
+:

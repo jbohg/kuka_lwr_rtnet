@@ -1,0 +1,53 @@
+&ACCESS RVP
+&REL 16
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+&PARAM EDITMASK = *
+DEF friBare_RT( )
+;FOLD INI
+  ;FOLD BASISTECH INI
+    GLOBAL INTERRUPT DECL 3 WHEN $STOPMESS==TRUE DO IR_STOPM ( )
+    INTERRUPT ON 3 
+    BAS (#INITMOV,0 )
+  ;ENDFOLD (BASISTECH INI)
+  ;FOLD USER INI
+    ;Make your modifications here
+    
+
+  ;ENDFOLD (USER INI)
+;ENDFOLD (INI)
+for i=1 to 16
+$fri_to_int[i]=0
+$fri_to_rea[i]=0.0
+endfor
+
+bas(#tool,2)
+halt ;input correct tool number here and restart
+
+
+;move to Home-Position
+;some movement is essential to release the brakes
+ptp { a1 0,a2 147,a3 90,a4 -10,a5 -44,a6 0,e1 -100}
+HALT
+
+; Test open FRI with datarate 1 msec
+retVal=friopen(1)
+wait for ($FriState==#MON)
+$fri_to_int[1]=0
+$fri_to_rea[1]=0.123
+$stiffness.strategy=30;
+$stiffness.axismaxdeltatrq={A1 100, A2 100, A3 100, A4 100, A5 100, A6 30, E1 30}
+$stiffness.commit=true;
+wait for ($FriQuality==#PERFECT)
+retVal=FRISTART(1.0)
+wait for ($FriState==#CMD)
+
+halt
+;FOLD PTP P4 Vel=100 % PDAT4 Tool[1]:no_tool Base[0];%{PE}%R 5.6.11,%MKUKATPBASIS,%CMOVE,%VPTP,%P 1:PTP, 2:P4, 3:, 5:100, 7:PDAT4
+$BWDSTART=FALSE
+PDAT_ACT=PPDAT4
+FDAT_ACT=FP4
+BAS(#PTP_PARAMS,100)
+PTP XP4 
+;ENDFOLD
+
+END
