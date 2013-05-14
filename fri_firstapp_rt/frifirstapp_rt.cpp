@@ -74,6 +74,7 @@ int frequency = 1000; //in Hz
 double T_s = 1.0/double(frequency);
 
 static const string ip_left = "192.168.0.20";
+static const string ip_right = "192.168.1.20";
 
 RT_PIPE log_pipe;
 RT_TASK task;
@@ -161,7 +162,7 @@ void mainControlLoop(void* cookie)
   rt_task_set_mode(0, T_WARNSW, NULL);  
   rt_task_wait_period(NULL);
 
-  friRemote friInst(49938, ip_left.c_str());
+  friRemote friInst(49938, ip_right.c_str());
 
   int ret;
   unsigned long overrun;

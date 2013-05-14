@@ -108,9 +108,9 @@ void friUdp::Init(const char * remoteHost)
 
   
   // make the socket non blocking after a specific amount of nanoseconds
-  //int64_t tout = 5 * 20000000000;
+  int64_t tout = 5 * 20000000000;
   // 0.5 milliseconds
-  int64_t tout = 1*10000;
+  //int64_t tout = 1*10000;
   // let socket immidiately return
   // int64_t tout = -1;
   if(rt_dev_ioctl(udp_socket_, RTNET_RTIOC_TIMEOUT, &tout) < 0)
