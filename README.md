@@ -4,7 +4,7 @@ LWR4 Realtime Communication with Xenomai + RTNet
 Adaptation of Kuka-provided FRI communication interface to Xenomai+RTNet. 
 First and Second example are re-written. Example for pure receiving/sending of packages (no commands) provided as well as simultanenous (asynchronous) communication with two arms. 
 
-We are running xenomai 2.5.6 and linux kernel 2.6.35.9. For RTNet we are using the master branch of git://rtnet.git.sourceforge.net/gitroot/rtnet/rtnet. 
+We are running xenomai 2.5.6 and linux kernel 2.6.35.9. For RTNet we are using the master branch of **git://rtnet.git.sourceforge.net/gitroot/rtnet/rtnet. **
 Currently 
 
 ```
