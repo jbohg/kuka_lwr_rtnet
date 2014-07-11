@@ -44,7 +44,7 @@ apt-get remove network-manager
 Instead, setup your */etc/network/interfaces*. E.g. on our machine, we only need to bring up one non-realtime port for normal ethernet and dhcp. For an **example**, look at interfaces in directory configs.
 
 ### Kuka Network Setup
-On the Kuka side, you have to make sure that the network card is correctly set up. It needs to know its own and the remote side's IP address. On the Kuka controller (KRC) open the file *C:\Windows\vxwin.ini* and enter it IP address
+On the Kuka side, you have to make sure that the network card is correctly set up. It needs to know its own and the remote side's IP address. On the Kuka controller (KRC) open the file *C:\Windows\vxwin.ini* and enter it IP address (e.g. 192.168.0.20)
 ```
 [Boot]
 Bootline=elPci(0,1)pc:vxworks h=192.0.1.2 b=192.0.1.1 e=192.168.0.20 u=target pw=vxworks
