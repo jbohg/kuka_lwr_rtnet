@@ -1,4 +1,4 @@
-Kuka Examples for LWR 4 adapted for Xenomai + RTNet
+LWR4 Realtime Communication with Xenomai + RTNet
 ==============
 
 Adaptation of Kuka-provided FRI communication interface to Xenomai+RTNet. 
