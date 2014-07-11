@@ -39,10 +39,10 @@ Uninstall NetworkManager so that it is not managing the network devices automati
 ```
 apt-get remove network-manager 
 ```
-Instead, setup your /etc/network/interfaces. E.g. on out machine, we only need to bring up one non-realtime port for normal ethernet and dhcp. For an example, look at interfaces in directory configs
+Instead, setup your /etc/network/interfaces. E.g. on our machine, we only need to bring up one non-realtime port for normal ethernet and dhcp. For an example, look at interfaces in directory configs.
 
-After rebooting, ifconfig should show one ethernet device. In our case this would be eth4. For starting the realtime ethernet ports, run the script host_rtnet (in directory configs). It will first unload all other network drivers, and then set up one rtnet port with a static ip 192.168.0.100, set a route to the kuka arm via IP 192.168.0.20 and create the device rteth0. The it sets up the non-realtime port by loading the driver tg3 and bringing up eth4. Check with ifconfig, if the ethernet ports rteth0 exist now.
+After rebooting, ifconfig should show one ethernet device. In our case this would be eth4. For starting the realtime ethernet ports, run the script host_rtnet (in directory configs). It will first unload all other network drivers, and then set up one rtnet port with a static ip 192.168.0.100, set a route to the kuka arm via IP 192.168.0.20 and create the device rteth0. Then, it sets up the non-realtime port by loading the driver tg3 and bringing up eth4. Check with ifconfig, if the ethernet ports rteth0 exist now.
 
 For running this rtnet script at startup, copy it to /etc/init.d/ and create symbolic links in all the runlevels to this script.
 
-An example script for starting up the FRI with 1ms on the kuka arms and starting the axis-specific stiffness controller strategy is also contained in directory configs.
+An example script for starting up the FRI with 1ms on the kuka arms and starting the axis-specific stiffness controller strategy is also contained in directory configs (friBare_RT.src).
