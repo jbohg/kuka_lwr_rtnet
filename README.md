@@ -1,4 +1,4 @@
-Kuka Example Code for LWR 4 adapted for Xenomai + RTNet
+Kuka Examples for LWR 4 adapted for Xenomai + RTNet
 ==============
 
 Adaptation of Kuka-provided FRI communication interface to Xenomai+RTNet. 
