@@ -4,6 +4,20 @@ LWR4 Realtime Communication with Xenomai + RTNet
 Adaptation of Kuka-provided FRI communication interface to Xenomai+RTNet. 
 First and Second example are re-written. Example for pure receiving/sending of packages (no commands) provided as well as simultanenous (asynchronous) communication with two arms. 
 
+### Kuka Network Setup
+On the Kuka side, you have to make sure that the network card is correctly set up. It needs to know its own and the remote side's IP address. On the Kuka controller (KRC) open the file *C:\Windows\vxwin.ini* and enter it IP address (e.g. 192.168.0.20)
+```
+[Boot]
+Bootline=elPci(0,1)pc:vxworks h=192.0.1.2 b=192.0.1.1 e=192.168.0.20 u=target pw=vxworks
+```
+In *C:\KRC\Roboter\INIT\dlrrc.ini* set a static IP for the remote computer that is connected to the controller. (e.g. FRIHOST=192.168.0.100). 
+```
+[DLRRC]
+FRIHOST=192.168.0.100
+FRISOCK=49938,0
+```
+Reboot the KRC.
+
 ###System Setup
 We are running xenomai 2.5.6 and linux kernel 2.6.35.9 using Ubuntu 12.04 LTS. 
 The ethernet card is a Intel Pro/1000 PT Quad Port Low Profile. Output of lspci is 
@@ -43,23 +57,8 @@ apt-get remove network-manager
 ```
 Instead, setup your */etc/network/interfaces*. E.g. on our machine, we only need to bring up one non-realtime port for normal ethernet and dhcp. For an **example**, look at interfaces in directory configs.
 
-### Kuka Network Setup
-On the Kuka side, you have to make sure that the network card is correctly set up. It needs to know its own and the remote side's IP address. On the Kuka controller (KRC) open the file *C:\Windows\vxwin.ini* and enter it IP address (e.g. 192.168.0.20)
-```
-[Boot]
-Bootline=elPci(0,1)pc:vxworks h=192.0.1.2 b=192.0.1.1 e=192.168.0.20 u=target pw=vxworks
-```
-In *C:\KRC\Roboter\INIT\dlrrc.ini* set a static IP for the remote computer that is connected to the controller. (e.g. FRIHOST=192.168.0.100). 
-```
-[DLRRC]
-FRIHOST=192.168.0.100
-FRISOCK=49938,0
-```
-After rebooting the KRC and having an ethernet cable connected directly from the KRC realtime ethernet card to the remote machine (with IP as set in FRIHOST, e.g. 192.168.0.100), then you should be able to ping the KRC from the remote machine. This should be possible even from a non-realtime ethernet connection.
-
-
 ###Bringing up RTNet Interfaces
-After rebooting, ifconfig should show one ethernet device. In our case this would be eth4. For starting the realtime ethernet ports, run the script **host_rtnet** (in directory configs). It will first unload all other network drivers, and then set up one rtnet port with a static ip 192.168.0.100, set a route to the kuka arm via IP 192.168.0.20 and create the device rteth0. Then, it sets up the non-realtime port by loading the driver tg3 and bringing up eth4. Check with ifconfig, if the ethernet ports rteth0 exist now.
+After rebooting the remote machine, ifconfig should show one ethernet device. In our case this would be eth4. For starting the realtime ethernet ports, run the script **host_rtnet** (in directory configs). It will first unload all other network drivers, and then set up one rtnet port with a static ip 192.168.0.100, set a route to the kuka arm via IP 192.168.0.20 and create the device rteth0. Then, it sets up the non-realtime port by loading the driver tg3 and bringing up eth4. Check with ifconfig, if the ethernet ports rteth0 exist now.
 
 For running this rtnet script at startup, copy it to /etc/init.d/ and create symbolic links in all the runlevels to this script.
 
