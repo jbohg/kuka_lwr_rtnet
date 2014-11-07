@@ -229,7 +229,7 @@ void mainControlLoop(void* cookie)
 		timeCounter=0.;
 	      }
 	    // Compute new values. Data exchange triggered from the top level
-	    friInst.doCartesianImpedanceControl(newCartVals,NULL,NULL,newForceTorqueAdd, false);
+	    friInst.doCartesianImpedanceControl(newCartVals,NULL,NULL,newForceTorqueAdd, NULL, false);
 	  }
 	  break;
 	default:

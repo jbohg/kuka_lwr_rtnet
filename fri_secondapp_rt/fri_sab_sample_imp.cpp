@@ -175,11 +175,10 @@ void mainControlLoop(void* cookie)
   //  friRemote friInst;
   FRI_QUALITY lastQuality = FRI_QUALITY_BAD;
   FRI_CTRL lastCtrlScheme = FRI_CTRL_OTHER;
-  double timeCounter=0;
   
-  float firstJntVals[LBR_MNJ];
-
+  float firstJntVals[LBR_MNJ] = {0};
   bool first = true;
+
 
   /* enter main loop - wait until we enter stable command mode */
   while(going)

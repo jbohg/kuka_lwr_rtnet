@@ -140,7 +140,6 @@ void mainControlLoop(void* cookie)
 int main (int argc, char *argv[])
 {
   std::string ans;
-  int tmp = 0;
 
   cout << "Opening FRI Version " 
        << FRI_MAJOR_VERSION << "." << FRI_SUB_VERSION 
