@@ -35,9 +35,6 @@ ADD_EXECUTABLE(friFirstApp
   fri_firstapp/frifirstapp.cpp)
 target_link_libraries(friFirstApp
   ${PROJECT_NAME}
-  #${XENO_NATIVE_LDFLAGS} -lrtdm
-  #${Boost_LIBRARIES}
-  #-lutility
   )
 
 ADD_EXECUTABLE(friSecondApp
@@ -53,25 +50,22 @@ target_link_libraries(friTestRT
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
 ADD_EXECUTABLE(friBiManualRT
-  fri_test_rt/fridual_rt.cpp)
+  fri_dual_rt/fridual_rt.cpp)
 target_link_libraries(friBiManualRT
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
-ADD_EXECUTABLE(friDualSeqRT
-  fri_test_rt/fridualseq_rt.cpp)
-target_link_libraries(friDualSeqRT
+ADD_EXECUTABLE(friBiManualSeqRT
+  fri_dual_rt/fridualseq_rt.cpp)
+target_link_libraries(friBiManualSeqRT
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
 ADD_EXECUTABLE(friFirstAppRT
@@ -80,7 +74,6 @@ target_link_libraries(friFirstAppRT
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
 ADD_EXECUTABLE(friSecondAppRT
@@ -89,7 +82,6 @@ target_link_libraries(friSecondAppRT
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
 ADD_EXECUTABLE(friGravCompRT
@@ -98,7 +90,6 @@ target_link_libraries(friGravCompRT
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
 ADD_EXECUTABLE(friSineTorqueRT
@@ -107,7 +98,6 @@ target_link_libraries(friSineTorqueRT
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
 ADD_EXECUTABLE(friSABImpedance
@@ -116,7 +106,6 @@ target_link_libraries(friSABImpedance
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}
-  #-lutility
   )
 
 # add a target to generate API documentation with Doxygen
