@@ -85,24 +85,8 @@ target_link_libraries(friSecondAppRT
   )
 
 ADD_EXECUTABLE(friGravCompRT
-  fri_secondapp_rt/fri_gravitycomp_rt.cpp)
+  fri_test_rt/fri_gravitycomp_rt.cpp)
 target_link_libraries(friGravCompRT
-  ${PROJECT_NAME}_RT
-  ${XENO_NATIVE_LDFLAGS} -lrtdm
-  ${Boost_LIBRARIES}
-  )
-
-ADD_EXECUTABLE(friSineTorqueRT
-  fri_secondapp_rt/fri_sinetorque_rt.cpp)
-target_link_libraries(friSineTorqueRT
-  ${PROJECT_NAME}_RT
-  ${XENO_NATIVE_LDFLAGS} -lrtdm
-  ${Boost_LIBRARIES}
-  )
-
-ADD_EXECUTABLE(friSABImpedance
-  fri_secondapp_rt/fri_sab_sample_imp.cpp)
-target_link_libraries(friSABImpedance
   ${PROJECT_NAME}_RT
   ${XENO_NATIVE_LDFLAGS} -lrtdm
   ${Boost_LIBRARIES}

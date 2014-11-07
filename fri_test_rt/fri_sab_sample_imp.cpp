@@ -240,35 +240,16 @@ void mainControlLoop(void* cookie)
 		
 		if(first){
 		  firstJntVals[i] = friInst.getMsrMsrJntPosition()[i];
+		  first = false;
 		}
 		newJntVals[i] =	firstJntVals[i];
 		newJntStiff[i] = 100.0;
 		newJntDamp[i] = 0.5;
 		newJntAddTorque[i] = 0.0;
 		
-		/*
-		newJntVals[i] = friInst.getMsrMsrJntPosition()[i];
-		newJntStiff[i] = 0.0;
-		newJntDamp[i] = 0.0;
-		newJntAddTorque[i] = 0.0;
-		*/
-	      }
-
-	    if(first)
-	      first = false;
-	    
-
-	    /*	    
-	    for (int i = 0; i < LBR_MNJ; i++)
-	      {
-		log.cur_jnt_vals[i] = newJntVals[i];
 	      }
 	    
-	    for (int i = 0; i < LBR_MNJ; i++)
-	      {
-		log.cur_trq_vals[i] = newJntAddTorque[i];
-	      }
-	    */
+
 	    // Call to data exchange - and the like 
 	    friInst.doJntImpedanceControl(newJntVals, 
 					  newJntStiff, 
@@ -323,18 +304,7 @@ void mainControlLoop(void* cookie)
 
 
 
-int 
-#ifdef __WIN32
-
-_tmain
-#else
-#ifdef _WRS_KERNEL
-friSecondApp
-#else
-main
-#endif
-#endif
-(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
   if(argc>2) {
