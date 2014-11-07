@@ -33,13 +33,19 @@
  *********************************************************************/
 
  /********************************************************************
-   fritest_rt.cpp
-    Based on KUKA version of FRI examples.
-   The Sample application just interacts to FRI w.r.t. 
-   joint position commands and copies back whatever it receives into 
-   command structure. 
-   The major goal is to understand FRI concepts and mechanism and to test
-   the data rate of the RTNet connection.
+   fridualseq_rt.cpp
+   Based on KUKA version of FRI examples.
+   This is an educational example of how the communication to two arms 
+   will *NOT* work. It is derived from the simple example fritest_rt.cpp
+   that copies back whatever it receives into command structure. 
+   It only spawns one realtime thread from which it controls the arms 
+   sequentially. In this way, it won't be possible to respond to any of
+   the two arms in the required 1ms. This could be possible if the arms 
+   very perfectly synchronised. But there is no possibility to do that. 
+   Each arm runs its own realtime clock and the remote xenomai machine
+   runs another realtime clock.
+   The example fridual_rt.cpp shows how you can communicate with both arms 
+   simultaneoulsy but asynchronously by spawning one thread per arm.
  *******************************************************************/
 
 
@@ -69,8 +75,6 @@ bool going = true;
 
 double T_s = 1.0/1000.0;
 
-//RT_TASK left_task;
-//RT_TASK right_task;
 RT_TASK dual_task;
 
 static const string ip_left = "192.168.0.20";
@@ -178,87 +182,6 @@ void dualControlLoop(void* cookie)
 
 }
 
-
-void leftControlLoop(void* cookie)
-{
-  signal(SIGXCPU, warnOnSwitchToSecondaryMode);
-
-  //  rt_task_set_periodic(NULL, TM_NOW, T_s * 1e9);
-  rt_task_set_mode(0, T_WARNSW, NULL);  
-  
-  friRemote friInst(49938, ip_left.c_str());
-
-  FRI_QUALITY lastQuality = FRI_QUALITY_BAD;
-  /* enter main loop - wait until we enter stable command mode */
-  while(going)
-    {
-      friInst.doReceiveData();
-      
-      /// perform some arbitrary handshake to KRL -- possible in monitor mode already
-      // send to krl int a value
-      friInst.setToKRLInt(0,1);
-      lastQuality = friInst.getQuality();
-      if ( lastQuality >= FRI_QUALITY_OK)
-	{
-	  // send a second marker
-	  friInst.setToKRLInt(0,10);
-	}
-      //
-      // just mirror the real value..
-      //
-      friInst.setToKRLReal(0,friInst.getFrmKRLReal(1));
-      
-      
-      // Mirror old joint values 
-      friInst.doTest();
-      
-      // Send packages 
-      friInst.doSendData();
-    }
-
-  return;
-}
-
-void rightControlLoop(void* cookie)
-{
-  signal(SIGXCPU, warnOnSwitchToSecondaryMode);
-  
-  //  rt_task_set_periodic(NULL, TM_NOW, T_s * 1e9);
-  rt_task_set_mode(0,T_WARNSW, NULL);  
-  
-  friRemote friInst(49938, ip_right.c_str());
-
-  FRI_QUALITY lastQuality = FRI_QUALITY_BAD;
-  /* enter main loop - wait until we enter stable command mode */
-  while(going)
-    {
-      friInst.doReceiveData();
-      
-      /// perform some arbitrary handshake to KRL -- possible in monitor mode already
-      // send to krl int a value
-      friInst.setToKRLInt(0,1);
-      lastQuality = friInst.getQuality();
-      if ( lastQuality >= FRI_QUALITY_OK)
-	{
-	  // send a second marker
-	  friInst.setToKRLInt(0,10);
-	}
-      //
-      // just mirror the real value..
-      //
-      friInst.setToKRLReal(0,friInst.getFrmKRLReal(1));
-      
-      
-      // Mirror old joint values 
-      friInst.doTest();
-      
-      // Send packages 
-      friInst.doSendData();
-    }
-
-  return;
-}
-
 int main (int argc, char *argv[])
 {
   std::string ans;
@@ -289,16 +212,6 @@ int main (int argc, char *argv[])
   rt_task_create(&dual_task, "Dual loop", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&dual_task, &dualControlLoop, NULL);
   rt_task_sleep(1e6);
-
-  /*
-  rt_task_create(&right_task, "Right loop", 0, 50, T_JOINABLE | T_FPU);
-  rt_task_start(&right_task, &rightControlLoop, NULL);
-  rt_task_sleep(1e6);
-
-  rt_task_create(&left_task, "Left loop", 0, 50, T_JOINABLE | T_FPU);
-  rt_task_start(&left_task, &leftControlLoop, NULL);
-  rt_task_sleep(1e6);
-  */
 
   std::cout << "Press [Enter] to exit.\n";
   waitForEnter();

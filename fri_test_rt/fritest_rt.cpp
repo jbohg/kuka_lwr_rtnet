@@ -38,11 +38,8 @@
    The Sample application just interacts to FRI w.r.t. 
    joint position commands and copies back whatever it receives into 
    command structure. 
-   For example if the arm is in JointImpedanceMode, when running this script, 
-   it will maintain its original position. It is compliant, i.e. you can 
-   perturb it from this position, but it will smoothly return to it.
-   For achieving this behaviour, you need to run the KUKA script 
-   config/friBare_RT.src on the KRC of the considered arm.
+   This means that when the arm is connected and receives packages in 
+   return, the only change will be that the FRI is in command mode.
    The major goal is to understand FRI concepts and mechanism and to test
    the data rate of the RTNet connection.
  *******************************************************************/
