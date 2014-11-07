@@ -33,13 +33,13 @@
  *********************************************************************/
 
  /********************************************************************
-   fritest_rt.cpp
-    Based on KUKA version of FRI examples.
-   The Sample application just interacts to FRI w.r.t. 
+   fridual_rt.cpp
+   Based on KUKA version of FRI examples.
+   This sample application just interacts to FRI w.r.t. 
    joint position commands and copies back whatever it receives into 
-   command structure. 
-   The major goal is to understand FRI concepts and mechanism and to test
-   the data rate of the RTNet connection.
+   command structure. It is derived from fritest_rt.cpp.
+   It communicates with two arms simultaneously but in an asynchronous 
+   manner. Specifically, it spawns two real time threads, one for each arm.
  *******************************************************************/
 
 
