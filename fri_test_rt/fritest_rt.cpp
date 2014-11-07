@@ -38,6 +38,9 @@
    The Sample application just interacts to FRI w.r.t. 
    joint position commands and copies back whatever it receives into 
    command structure. 
+   For example if the arm is in JointImpedanceMode, when running this script, 
+   it will maintain its original position. It is compliant, i.e. you can 
+   perturb it from this position, but it will smoothly return to it.
    The major goal is to understand FRI concepts and mechanism and to test
    the data rate of the RTNet connection.
  *******************************************************************/
@@ -104,7 +107,7 @@ void mainControlLoop(void* cookie)
     {
       res = friInst.doReceiveData();
 
-      /// perform some arbitrary handshake to KRL -- possible in monitor mode already
+      // perform some arbitrary handshake to KRL -- possible in monitor mode already
       // send to krl int a value
       friInst.setToKRLInt(0,1);
       lastQuality = friInst.getQuality();

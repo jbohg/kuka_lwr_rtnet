@@ -55,6 +55,8 @@
 #include <native/timer.h>
 #include <sys/mman.h>
 
+#include <signal.h>
+
 #include <iostream>
 #include <cstdlib>
 #include <math.h>
