@@ -38,6 +38,9 @@
   Based on Kuka FRI examples.
   The Sample application just interacts to FRI w.r.t. joint position 
   commands and performs a sine curve using position control.
+  This is also an example for how to combine a real time loop 
+  that controls one of the arms and a non-realtime loop for logging
+  what is going on on the robot.
  *******************************************************************/
 
 
@@ -164,9 +167,6 @@ void mainControlLoop(void* cookie)
 
   friRemote friInst(49938, ip_right.c_str());
 
-  int ret;
-  unsigned long overrun;
-  
   //memory allocation
   loop_monitoring log;
   
@@ -179,22 +179,11 @@ void mainControlLoop(void* cookie)
   /* enter main loop - wait until we enter stable command mode */
   while(going)
     {
-      ret = rt_task_wait_period(&overrun);
-      before_read = long(rt_timer_ticks2ns(rt_timer_read()));
-
-      std::stringstream buffer;
-      if(ret !=0 )
-	buffer << "Timing error\n";
-      if (ret == -EWOULDBLOCK) {
-	buffer << "EWOULBLOCK while rt_task_wait_period. Overrun: " << overrun << "\n";
-      } else if(ret == -EINTR){
-	buffer << "EINTR while rt_task_wait_period. Overrun: " << overrun << "\n";
-      } else if(ret == -ETIMEDOUT){
-	buffer << "ETIMEDOUT while rt_task_wait_period. Overrun: " << overrun << "\n";
-      } else if(ret == -EPERM){
-	buffer << "EPERM while rt_task_wait_period\n";
-      }      
       
+      before_read = long(rt_timer_ticks2ns(rt_timer_read()));
+      
+      std::stringstream buffer;
+
       res = friInst.doReceiveData();
       
       /// perform some arbitrary handshake to KRL -- possible in monitor mode already
@@ -228,6 +217,7 @@ void mainControlLoop(void* cookie)
 	log.message = buffer.str();
 	rt_pipe_write(&log_pipe,&log,sizeof(log), P_NORMAL);
 	previous_read = before_read;
+	
       }
     }
 
@@ -236,39 +226,15 @@ void mainControlLoop(void* cookie)
 }
 
 
-int 
-#ifdef __WIN32
-
-_tmain
-#else
-#ifdef _WRS_KERNEL
-friFirstApp
-#else
-main
-#endif
-#endif
-(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
   // std::string ans;
   int tmp = 0;
 
-  // //the argument sets the frequency
-  // printf("please enter frequency of operation [%d]: ", frequency);
-  // getline(std::cin,ans);
-  // if ( (tmp = atoi(ans.c_str())))
-  //   {
-  //   if( (tmp>10) && (tmp < 1200) )
-  //   {
-  //     frequency = tmp;
-  //     T_s = (double) (1 / (double) frequency);
-  //   }
-  // }
-  // printf("frequency set to %d, period is %f\n", frequency, T_s);
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
   rt_task_shadow(NULL, "fri_first_rt", 50, 0);
-
 
   cout << "Opening FRI Version " 
        << FRI_MAJOR_VERSION << "." << FRI_SUB_VERSION 
@@ -298,7 +264,6 @@ main
 
   boost::thread log_thread(logTask);
   
-
   rt_task_create(&task, "Real time loop", 0, 50, T_JOINABLE | T_FPU);
   rt_task_start(&task, &mainControlLoop, NULL);
   rt_task_sleep(1e6);  
@@ -310,10 +275,11 @@ main
   going = false;
   rt_task_join(&task);
   
+  // deleting the pipe should cause the reading flag to switch to  false
   rt_pipe_delete(&log_pipe);
-  
   log_thread.join();
 
+  
   return EXIT_SUCCESS;
 }
 /* @} */

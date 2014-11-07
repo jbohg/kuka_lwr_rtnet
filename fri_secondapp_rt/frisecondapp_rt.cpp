@@ -253,18 +253,7 @@ void mainControlLoop(void* cookie)
 
 
 
-int 
-#ifdef __WIN32
-
-_tmain
-#else
-#ifdef _WRS_KERNEL
-friSecondApp
-#else
-main
-#endif
-#endif
-(int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 
  mlockall(MCL_CURRENT | MCL_FUTURE);
