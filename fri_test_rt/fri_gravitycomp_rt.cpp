@@ -33,10 +33,12 @@
  *********************************************************************/
 
 /********************************************************************* 
- FRI_SecondApp_rt.cpp
+ FRI_gravitycomp_rt.cpp
 
- The second -more versatile- sample of FRI Usage using an impedance 
- controller to perform the sine wave.
+This example demonstrates how the Kuka internal gravity compensation can
+activited by sending 0 additional torques in JntImpedance mode. The stiffness 
+and damping terms in the controller are elimated by just sending 
+back the old values, i.e. the terms yield 0.
 *******************************************************************/
 
 
